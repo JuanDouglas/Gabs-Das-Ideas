@@ -32,9 +32,9 @@ const MEMORIES = {
     { 
       id: 3, 
       url: "./ela_aqui.jpeg", 
-      date: "HOJE", 
-      title: "25 JAN 2025" 
-    },,
+      date: "25 JAN 2025", 
+      title: "É incrível como sua presença é boa!" 
+    },
     { 
       id: 4, 
       url: "./aleatoria.jpg", 
@@ -67,7 +67,7 @@ const pageVariants = {
   animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
   exit: { opacity: 0, scale: 1.05, filter: "blur(10px)" }
 };
-const pageTransition = { duration: 1.2, ease: [0.22, 1, 0.36, 1] }; // Curva Bezier suave
+const pageTransition = { duration: 1.2 }; // Configuração simples válida
 
 // --- Utilities ---
 
@@ -79,32 +79,114 @@ const useHaptic = () => {
   };
   return trigger;
 };
+interface TypewriterTextProps {
+  text: string;
+  delay?: number;
+  className?: string;
+}
 
-const TypewriterText = ({ text, delay = 50, className }) => {
+const TypewriterText = ({
+  text,
+  delay = 50,
+  className
+}: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
+
   useEffect(() => {
     let index = 0;
+
     const interval = setInterval(() => {
-      setDisplayedText((prev) => prev + text.charAt(index));
+      setDisplayedText(text.slice(0, index + 1));
       index++;
-      if (index === text.length) clearInterval(interval);
+
+      if (index >= text.length) {
+        clearInterval(interval);
+      }
     }, delay);
+
     return () => clearInterval(interval);
   }, [text, delay]);
-  return <p className={className}>{displayedText}</p>;
+
+  return <span className={className}>{displayedText}</span>;
 };
 
-const useDaysTogether = (startDate) => {
+// Componente auxiliar para corações com posição dinâmica
+const HeartElement = ({ heart }: { heart: Heart }) => {
+  return (
+    <div 
+      className="heart-pos text-pink-500" 
+      style={{ 
+        '--heart-left': `${heart.x}%`, 
+        '--heart-top': `${heart.y}%` 
+      } as React.CSSProperties}
+    >
+      <Heart size={24} className="fill-pink-500/50" />
+    </div>
+  );
+};
+
+// Componente auxiliar para o jogador com posição dinâmica
+const PlayerElement = ({ x }: { x: number }) => {
+  return (
+    <div 
+      className="player-pos text-white" 
+      style={{ 
+        '--player-left': `${x}%` 
+      } as React.CSSProperties}
+    >
+      <Rocket size={40} className="fill-indigo-500 text-indigo-300 rotate-[-45deg]" />
+    </div>
+  );
+};
+
+// Componente auxiliar para as estrelas com posição dinâmica
+const StarElement = ({ top, left, delay }: { top: number; left: number; delay: number }) => {
+  return (
+    <div 
+      className="star-pos" 
+      style={{ 
+        '--star-top': `${top}%`, 
+        '--star-left': `${left}%`, 
+        '--star-delay': `${delay}s` 
+      } as React.CSSProperties} 
+    />
+  );
+};
+
+interface Heart {
+  id: number;
+  x: number;
+  y: number;
+}
+
+interface IntroScreenProps {
+  onStart: () => void;
+}
+
+interface LevelProps {
+  onNext: () => void;
+}
+
+interface FinalLevelProps {
+  onRestart: () => void;
+}
+
+const useDaysTogether = (startDate: string | Date) => {
   const [days, setDays] = useState(0);
+
   useEffect(() => {
-    const start = new Date(2025, 11, 21);
-    const now = new Date();
-    const diff = now - start;
-    const daysCount = Math.floor(diff / (1000 * 60 * 60 * 24));
-    setDays(daysCount);
+    const today = new Date();
+    const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+
+    const diffTime = today.getTime() - start.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    setDays(diffDays);
   }, [startDate]);
+
   return days;
 };
+
 
 // --- Componentes Auxiliares ---
 
@@ -148,45 +230,62 @@ const BackgroundMusic = () => {
   )
 }
 
-const ConfettiExplosion = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-    {[...Array(50)].map((_, i) => (
-      <div
-        key={i}
-        className={`absolute w-2 h-2 rounded-full ${['bg-pink-500', 'bg-purple-500', 'bg-cyan-400', 'bg-yellow-400'][Math.floor(Math.random() * 4)]}`}
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: `-5%`,
-          animation: `fall ${Math.random() * 3 + 2}s linear infinite`,
-          animationDelay: `${Math.random() * 5}s`
-        }}
-      />
-    ))}
-    <style>{`@keyframes fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }`}</style>
-  </div>
-);
+// Componente auxiliar para partículas do confetti
+const ConfettiParticle = ({ particle }: { particle: { id: number; color: string; left: number; duration: number; delay: number } }) => {
+  return (
+    <div
+      className={`confetti-particle w-2 h-2 rounded-full ${particle.color}`}
+      style={{
+        '--particle-left': `${particle.left}%`,
+        '--particle-duration': `${particle.duration}s`,
+        '--particle-delay': `${particle.delay}s`
+      } as React.CSSProperties}
+    />
+  );
+};
+
+const ConfettiExplosion = () => {
+  const particles = [...Array(50)].map((_, i) => {
+    const colors = ['bg-pink-500', 'bg-purple-500', 'bg-cyan-400', 'bg-yellow-400'];
+    const color = colors[Math.floor(Math.random() * 4)];
+    const left = Math.random() * 100;
+    const duration = Math.random() * 3 + 2;
+    const delay = Math.random() * 5;
+    
+    return { id: i, color, left, duration, delay };
+  });
+  
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {particles.map((particle) => (
+        <ConfettiParticle key={particle.id} particle={particle} />
+      ))}
+      <style>{`@keyframes fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }`}</style>
+    </div>
+  );
+};
 
 // --- Telas do Jogo ---
 
-const IntroScreen = React.forwardRef(({ onStart }, ref) => {
+const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({ onStart }, ref) => {
   const [gameWon, setGameWon] = useState(false);
   const [score, setScore] = useState(0);
   const [playerX, setPlayerX] = useState(50);
-  const [hearts, setHearts] = useState([]);
-  const containerRef = useRef(null);
+  const [hearts, setHearts] = useState<Heart[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
   const haptic = useHaptic();
 
-  const setCombinedRef = (node) => {
+  const setCombinedRef = (node: HTMLDivElement | null) => {
     containerRef.current = node;
     if (typeof ref === 'function') ref(node);
     else if (ref) ref.current = node;
   };
 
   useEffect(() => {
-    const preloadImage = (src) => { const img = new Image(); img.src = src; };
+    const preloadImage = (src: string) => { const img = new Image(); img.src = src; };
     Object.values(MEMORIES).forEach(v => {
-      if(v.url) preloadImage(v.url);
-      if(Array.isArray(v)) v.forEach(m => preloadImage(m.url));
+      if(!Array.isArray(v) && v.url) preloadImage(v.url);
+      if(Array.isArray(v)) v.forEach(m => m && preloadImage(m.url));
     });
   }, []);
 
@@ -216,7 +315,7 @@ const IntroScreen = React.forwardRef(({ onStart }, ref) => {
     return () => { clearInterval(spawnInterval); clearInterval(gameLoop); };
   }, [playerX, gameWon]);
 
-  const handleMove = (clientX) => {
+  const handleMove = (clientX: number) => {
     if (!containerRef.current || gameWon) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = ((clientX - rect.left) / rect.width) * 100;
@@ -245,13 +344,9 @@ const IntroScreen = React.forwardRef(({ onStart }, ref) => {
             </div>
           </div>
           {hearts.map(h => (
-            <div key={h.id} className="absolute text-pink-500 pointer-events-none" style={{ left: `${h.x}%`, top: `${h.y}%` }}>
-              <Heart size={24} className="fill-pink-500/50" />
-            </div>
+            <HeartElement key={h.id} heart={h} />
           ))}
-          <div className="absolute bottom-10 text-white transition-all duration-75" style={{ left: `${playerX}%`, transform: 'translateX(-50%)' }}>
-            <Rocket size={40} className="fill-indigo-500 text-indigo-300 rotate-[-45deg]" />
-          </div>
+          <PlayerElement x={playerX} />
           <div className="absolute bottom-4 text-white/30 text-xs pointer-events-none">Arraste para mover</div>
         </>
       ) : (
@@ -272,7 +367,7 @@ const IntroScreen = React.forwardRef(({ onStart }, ref) => {
   );
 });
 
-const CampusLevel = React.forwardRef(({ onNext }, ref) => {
+const CampusLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref) => {
   const [revealed, setRevealed] = useState(false);
   const haptic = useHaptic();
 
@@ -310,19 +405,19 @@ const CampusLevel = React.forwardRef(({ onNext }, ref) => {
           {revealed && <TypewriterText className="text-gray-300 text-sm h-16" text="Foi onde o player 1 encontrou o player 2. No meio de tanta tecnologia, o melhor algoritmo foi o destino nos juntando." delay={30} />}
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.0 }} className="flex justify-end">
-          <button onClick={onNext} className="p-4 bg-pink-500 rounded-full text-white hover:bg-pink-600 transition-all shadow-lg shadow-pink-500/30"><ChevronRight size={24} /></button>
+          <button onClick={onNext} className="p-4 bg-pink-500 rounded-full text-white hover:bg-pink-600 transition-all shadow-lg shadow-pink-500/30" aria-label="Próximo nível"><ChevronRight size={24} /></button>
         </motion.div>
       </div>
     </motion.div>
   );
 });
 
-const NewYearLevel = React.forwardRef(({ onNext }, ref) => {
+const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref) => {
   const [score, setScore] = useState(0);
   const maxScore = 5;
   const haptic = useHaptic();
 
-  const handleTap = (e) => {
+  const handleTap = (e: React.MouseEvent) => {
     if (score >= maxScore) return;
     haptic([5]);
     setScore(s => s + 1);
@@ -359,7 +454,7 @@ const NewYearLevel = React.forwardRef(({ onNext }, ref) => {
           </motion.div>
         ) : (
           <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 mx-auto">
-            <div className="relative aspect-video w-full rounded-xl overflow-hidden mb-4 shadow-lg"><img src={MEMORIES.newYear.url} className="w-full h-full object-cover" /></div>
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden mb-4 shadow-lg"><img src={MEMORIES.newYear.url} className="w-full h-full object-cover" alt={MEMORIES.newYear.title} /></div>
             <h2 className="text-xl font-bold text-white mb-1">Momentos Brilhantes</h2>
             <p className="text-sm text-gray-200">Risadas sinceras valem mais que qualquer código.</p>
           </motion.div>
@@ -369,9 +464,9 @@ const NewYearLevel = React.forwardRef(({ onNext }, ref) => {
   );
 });
 
-const DistanceLevel = React.forwardRef(({ onNext }, ref) => {
+const DistanceLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref) => {
   const [completed, setCompleted] = useState(false);
-  const trackRef = useRef(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const width = useTransform(x, value => `${value}px`);
   const haptic = useHaptic();
@@ -412,11 +507,11 @@ const DistanceLevel = React.forwardRef(({ onNext }, ref) => {
 });
 
 // --- NOVA TELA: CONSTELAÇÃO (Level 4) ---
-const ConstellationLevel = React.forwardRef(({ onNext }, ref) => {
+const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref) => {
   const [points, setPoints] = useState([false, false, false]); // 3 Estrelas
   const haptic = useHaptic();
 
-  const handleStarClick = (index) => {
+  const handleStarClick = (index: number) => {
     if (points[index]) return;
     const newPoints = [...points];
     newPoints[index] = true;
@@ -437,9 +532,15 @@ const ConstellationLevel = React.forwardRef(({ onNext }, ref) => {
     >
       {/* Background estrelado */}
       <div className="absolute inset-0 opacity-40">
-        {[...Array(20)].map((_, i) => (
-          <div key={i} className="absolute bg-white rounded-full w-1 h-1 animate-pulse" style={{ top: Math.random()*100+'%', left: Math.random()*100+'%', animationDelay: Math.random()+'s' }} />
-        ))}
+        {[...Array(20)].map((_, i) => {
+          const top = Math.random() * 100;
+          const left = Math.random() * 100;
+          const delay = Math.random();
+          
+          return (
+            <StarElement key={i} top={top} left={left} delay={delay} />
+          );
+        })}
       </div>
 
       <div className="z-10 text-center mb-12">
@@ -489,7 +590,7 @@ const ConstellationLevel = React.forwardRef(({ onNext }, ref) => {
 });
 
 // --- Final Screen ---
-const FinalLevel = React.forwardRef(({ onRestart }, ref) => {
+const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestart }, ref) => {
   const daysTogether = useDaysTogether(MEMORIES.campus.date);
 
   return (
@@ -528,7 +629,7 @@ const FinalLevel = React.forwardRef(({ onRestart }, ref) => {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2.5 }} className="mt-20 relative bg-[#fff9c4] text-gray-800 p-8 shadow-lg transform rotate-2 max-w-xs w-full">
            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-500 shadow-md"></div>
            <TypewriterText text="Não importa a fase, o nível ou a dificuldade. Meu jogo favorito é viver a vida com você." delay={50} className="font-handwriting text-2xl leading-relaxed" />
-           <p className="font-handwriting text-xl text-pink-600 font-bold mt-4 text-right">- Te amo, Gabi.</p>
+           <p className="font-handwriting text-xl text-pink-600 font-bold mt-4 text-right">- Te amo, Gaby.</p>
         </motion.div>
         <button onClick={onRestart} className="mt-16 px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold text-sm transition-all border border-white/20 backdrop-blur-md flex items-center gap-2 group">
           <Gamepad2 size={18} className="group-hover:rotate-12 transition-transform" />Reiniciar Jogo
@@ -559,6 +660,11 @@ export default function App() {
         .animate-bounce-up { animation: bounce-up 0.8s ease-out forwards; }
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
         .font-handwriting { font-family: 'Caveat', cursive; }
+        .heart-pos { position: absolute; pointer-events: none; left: var(--heart-left, 0); top: var(--heart-top, 0); }
+        .player-pos { position: absolute; bottom: 2.5rem; transition: all 75ms; transform: translateX(-50%); left: var(--player-left, 0); }
+        .star-pos { position: absolute; background: white; border-radius: 50%; width: 0.25rem; height: 0.25rem; animation: pulse 2s infinite; top: var(--star-top, 0); left: var(--star-left, 0); animation-delay: var(--star-delay, 0s); }
+        .confetti-particle { position: absolute; top: -5%; left: var(--particle-left, 0); animation: fall var(--particle-duration, 3s) linear infinite; animation-delay: var(--particle-delay, 0s); }
+        @keyframes fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
       `}</style>
     </div>
   );
