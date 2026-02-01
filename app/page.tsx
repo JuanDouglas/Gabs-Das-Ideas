@@ -1,8 +1,19 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, useAnimation } from 'framer-motion';
 import { Gamepad2, Heart, MapPin, Sparkles, Zap, ChevronRight, Star, Trophy, Rocket, Calendar, Volume2, VolumeX, Clock, Gift, X, Terminal, Lock, Eye, Bomb, Map, Bus, PartyPopper, Info, Utensils } from 'lucide-react';
+
+// Contexto global para controle de som
+interface SoundContextType {
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+}
+
+const SoundContext = createContext<SoundContextType>({
+  soundEnabled: false,
+  setSoundEnabled: () => {}
+});
 
 // --- Configuração & Assets ---
 const MEMORIES = {
@@ -51,6 +62,55 @@ const MEMORIES = {
 };
 
 const MUSIC_URL = "https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3"; 
+
+// Sistema de sons sintéticos como fallback
+let globalSoundEnabled = false;
+
+const createSyntheticSound = (frequency: number, duration: number = 200, type: OscillatorType = 'sine') => {
+  if (!globalSoundEnabled) return; // Respeita configuração de som
+  
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration / 1000);
+  } catch (err) {
+    console.log('Synthetic sound failed:', err);
+  }
+};
+
+// Usar apenas sons sintéticos (bips eletrônicos) ao invés de arquivos WAV falados
+const playSound = (filename: string, fallbackFreq: number = 440, fallbackType: OscillatorType = 'sine') => {
+  if (!globalSoundEnabled) return; // Respeita configuração de som
+  
+  // Para sons especiais como dale.wav e melhore.wav, tentar carregar arquivo
+  if (filename.includes('dale.wav') || filename.includes('melhore.wav')) {
+    const audio = new Audio(filename);
+    audio.volume = 0.5;
+    audio.play().catch(() => {
+      // Se falhar, usar som sintético como fallback
+      createSyntheticSound(fallbackFreq, 200, fallbackType);
+    });
+  } else {
+    // Para outros sons, usar diretamente sons sintéticos (mais limpos que WAV falados)
+    createSyntheticSound(fallbackFreq, 200, fallbackType);
+  }
+};
+
+// Hook para usar o contexto de som
+const useSoundContext = () => useContext(SoundContext); 
 
 const STEPS = {
   INTRO: 0,
@@ -280,6 +340,13 @@ const BackgroundMusic = () => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { setSoundEnabled } = useSoundContext();
+
+  // Atualiza estado global quando muda o estado da música
+  useEffect(() => {
+    globalSoundEnabled = playing;
+    setSoundEnabled(playing);
+  }, [playing, setSoundEnabled]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1161,6 +1228,17 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
       } else {
         setTerminalError(true);
         haptic([50, 50]);
+        
+        // Som de erro - tentar carregar melhore.wav ou usar fallback
+        const errorAudio = new Audio('./melhore.wav');
+        errorAudio.volume = 0.6;
+        errorAudio.play().catch(() => {
+          // Fallback: som de erro sintético
+          if (globalSoundEnabled) {
+            createSyntheticSound(150, 300, 'sawtooth'); // Tom baixo e áspero para erro
+          }
+        });
+        
         setTimeout(() => setTerminalError(false), 500);
       }
     }
@@ -1172,6 +1250,17 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
     else {
       setTerminalError(true);
       haptic([50, 50]);
+      
+      // Som de erro - tentar carregar melhore.wav ou usar fallback
+      const errorAudio = new Audio('./melhore.wav');
+      errorAudio.volume = 0.6;
+      errorAudio.play().catch(() => {
+        // Fallback: som de erro sintético
+        if (globalSoundEnabled) {
+          createSyntheticSound(150, 300, 'sawtooth'); // Tom baixo e áspero para erro
+        }
+      });
+      
       setTimeout(() => setTerminalError(false), 500);
     }
   };
@@ -1389,6 +1478,7 @@ export default function App() {
   const [step, setStep] = useState(STEPS.INTRO);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   
   // Controle de hidratação
   useEffect(() => {
@@ -1433,7 +1523,8 @@ export default function App() {
   }
 
   return (
-    <div className="relative w-full h-screen bg-[#0f0c29] overflow-hidden font-sans antialiased">
+    <SoundContext.Provider value={{ soundEnabled, setSoundEnabled }}>
+      <div className="relative w-full h-screen bg-[#0f0c29] overflow-hidden font-sans antialiased">
       {/* Debug: Indicador de step atual */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-4 left-4 z-[9999] bg-black/80 text-white text-xs px-2 py-1 rounded">
@@ -1519,5 +1610,6 @@ export default function App() {
         }
       `}</style>
     </div>
+    </SoundContext.Provider>
   );
 }
