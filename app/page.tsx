@@ -70,7 +70,7 @@ const pageVariants = {
   animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
   exit: { opacity: 0, scale: 1.05, filter: "blur(10px)" }
 };
-const pageTransition = { duration: 1.2 };
+const pageTransition = { duration: 1.2, ease: [0.22, 1, 0.36, 1]};
 
 // --- Utilities ---
 
