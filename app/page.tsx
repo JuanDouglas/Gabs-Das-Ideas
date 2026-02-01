@@ -211,7 +211,7 @@ const StarElement = React.memo<StarElementProps>(({ top, left, delay, size = 12 
       width: `${size}px`,
       height: `${size}px`,
       animationDelay: `${delay}s`,
-      opacity: Math.random() * 0.7 + 0.3
+      opacity: 0.3 + (0.7 * ((top * left) % 100) / 100) // Opacidade determinística baseada na posição
     }} 
   />
 ));
@@ -224,13 +224,17 @@ interface StarryBackgroundProps {
 }
 
 const StarryBackground = React.memo<StarryBackgroundProps>(({ density = 120, className = "" }) => {
-  const stars = useMemo(() => [...Array(density)].map((_, i) => ({
-    id: i,
-    top: Math.random() * 100,
-    left: Math.random() * 100,
-    delay: Math.random() * 5,
-    size: Math.random() * 2 + 1
-  })), [density]);
+  const [stars, setStars] = useState<Array<{id: number; top: number; left: number; delay: number; size: number}>>([]);
+  
+  useEffect(() => {
+    setStars([...Array(density)].map((_, i) => ({
+      id: i,
+      top: Math.random() * 100,
+      left: Math.random() * 100,
+      delay: Math.random() * 5,
+      size: Math.random() * 2 + 1
+    })));
+  }, [density]);
 
   return (
     <div className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}>
@@ -250,13 +254,22 @@ StarryBackground.displayName = 'StarryBackground';
 
 const useDaysTogether = (startDate: string) => {
   const [days, setDays] = useState(0);
+  
   useEffect(() => {
-    const today = new Date();
-    const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
-    const diffTime = today.getTime() - start.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    setDays(diffDays);
+    const calculateDays = () => {
+      const today = new Date();
+      const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+      const diffTime = today.getTime() - start.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      setDays(diffDays);
+    };
+    
+    calculateDays();
+    // Atualizar a cada dia
+    const interval = setInterval(calculateDays, 60000 * 60 * 24);
+    return () => clearInterval(interval);
   }, [startDate]);
+  
   return days;
 };
 
@@ -298,6 +311,9 @@ const BackgroundMusic = () => {
 
   const togglePlay = useCallback(() => {
     if (!audioRef.current || !loaded || error) return;
+    
+    // Som de clique no botão - tom neutro
+    playSound('./button.wav', 500, 'sine');
     
     try {
       if (playing) {
@@ -358,29 +374,33 @@ const ConfettiParticle = React.memo<ConfettiParticleProps>(({ particle, originX,
       '--ty': `${particle.ty}px`,
       animation: `confettiExplode ${particle.duration}s cubic-bezier(0.25, 1, 0.5, 1) forwards`,
       animationDelay: `${particle.delay}s`,
-      zIndex: 9999 + Math.floor(Math.random() * 100) // Z-index dinâmico para sobreposição natural
+      zIndex: 9999 + (particle.id % 100) // Z-index determinístico para sobreposição natural
     } as React.CSSProperties}
   />
 ));
 ConfettiParticle.displayName = 'ConfettiParticle';
 
 const ConfettiExplosion = ({ x = '50%', y = '50%' }: { x?: string; y?: string }) => {
-  const particles = useMemo(() => [...Array(250)].map((_, i) => {
-    const angle = (Math.PI * 2 * i) / 250 + Math.random() * 0.5;
-    const radius = Math.random() * 300 + 100;
-    const tx = Math.cos(angle) * radius;
-    const ty = Math.sin(angle) * radius - Math.random() * 200; // Bias para cima
-    
-    return {
-      id: i,
-      color: ['bg-pink-500', 'bg-purple-500', 'bg-blue-400', 'bg-yellow-400', 'bg-white', 'bg-red-500', 'bg-green-500', 'bg-orange-500', 'bg-cyan-400', 'bg-lime-400'][Math.floor(Math.random() * 10)],
-      tx,
-      ty,
-      duration: Math.random() * 3 + 2.5,
-      delay: Math.random() * 0.4,
-      rotation: Math.random() * 360
-    };
-  }), []);
+  const [particles, setParticles] = useState<Array<{id: number; color: string; tx: number; ty: number; duration: number; delay: number; rotation: number}>>([]);
+  
+  useEffect(() => {
+    setParticles([...Array(250)].map((_, i) => {
+      const angle = (Math.PI * 2 * i) / 250 + Math.random() * 0.5;
+      const radius = Math.random() * 300 + 100;
+      const tx = Math.cos(angle) * radius;
+      const ty = Math.sin(angle) * radius - Math.random() * 200; // Bias para cima
+      
+      return {
+        id: i,
+        color: ['bg-pink-500', 'bg-purple-500', 'bg-blue-400', 'bg-yellow-400', 'bg-white', 'bg-red-500', 'bg-green-500', 'bg-orange-500', 'bg-cyan-400', 'bg-lime-400'][Math.floor(Math.random() * 10)],
+        tx,
+        ty,
+        duration: Math.random() * 3 + 2.5,
+        delay: Math.random() * 0.4,
+        rotation: Math.random() * 360
+      };
+    }));
+  }, []);
   
   return (
     <>
@@ -600,7 +620,7 @@ const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({ onStar
             <h2 className="text-green-400 font-bold tracking-widest text-xs uppercase">Level Unlocked</h2>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">Gabrielly's <br/> Adventure</h1>
           </div>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onStart} className="px-10 py-4 bg-white text-indigo-900 font-bold rounded-2xl flex items-center gap-3 shadow-xl">
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { playSound('./start.wav', 440, 'square'); onStart(); }} className="px-10 py-4 bg-white text-indigo-900 font-bold rounded-2xl flex items-center gap-3 shadow-xl">
             START STORY <ChevronRight />
           </motion.button>
           
@@ -657,7 +677,7 @@ const CampusLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, re
           {revealed && <TypewriterText className="text-gray-300 text-sm h-16" text="Foi onde o player 1 encontrou o player 2. No meio de tanta tecnologia, o melhor algoritmo foi o destino nos juntando." delay={30} />}
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.0 }} className="flex justify-end">
-          <button onClick={onNext} className="p-4 bg-pink-500 rounded-full text-white hover:bg-pink-600 transition-all shadow-lg shadow-pink-500/30" aria-label="Próximo nível"><ChevronRight size={24} /></button>
+          <button onClick={() => { playSound('./click.wav', 600, 'sine'); onNext(); }} className="p-4 bg-pink-500 rounded-full text-white hover:bg-pink-600 transition-all shadow-lg shadow-pink-500/30" aria-label="Próximo nível"><ChevronRight size={24} /></button>
         </motion.div>
       </div>
     </motion.div>
@@ -673,6 +693,11 @@ const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, r
     if (score >= maxScore) return;
     haptic([10]);
     setScore(s => s + 1);
+    
+    // Efeito sonoro
+    const audio = new Audio('./dale.wav');
+    audio.volume = 0.6;
+    audio.play().catch(err => console.log('Audio play failed:', err));
     
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#ffffff', '#ffa500', '#ff69b4'];
     for (let i = 0; i < 20; i++) {
@@ -870,12 +895,21 @@ const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNex
     if (points[index]) return;
     if (index > 0 && !points[index - 1]) return;
 
+    // Som de estrela/sino - tom cristalino
+    playSound('./star.wav', 800 + (index * 100), 'triangle');
+
     const newPoints = [...points];
     newPoints[index] = true;
     setPoints(newPoints);
     haptic([10]);
     
     if (newPoints.every(p => p)) {
+      // Som de constelação completa - arpejo mágico
+      setTimeout(() => createSyntheticSound(523, 200), 0);   // C5
+      setTimeout(() => createSyntheticSound(659, 200), 100); // E5
+      setTimeout(() => createSyntheticSound(784, 200), 200); // G5
+      setTimeout(() => createSyntheticSound(1047, 400), 300); // C6
+      
       haptic([30, 50, 30]);
       setTimeout(onNext, 1500);
     }
@@ -968,12 +1002,22 @@ const FeedLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref)
 
   const handleFeed = () => {
     if (isComplete || navigationCalled) return; 
+    
+    // Som de comer/mastigar - tom baixo e suave
+    playSound('./eat.wav', 300, 'square');
+    
     setHunger(prev => {
       const newVal = prev + 5; 
       if (newVal >= 100 && !navigationCalled) {
         setIsComplete(true);
         setNavigationCalled(true);
         haptic([50, 50]);
+        
+        // Som de sucesso/vitória - sequência ascendente
+        setTimeout(() => createSyntheticSound(523, 150), 0);   // C5
+        setTimeout(() => createSyntheticSound(659, 150), 150); // E5  
+        setTimeout(() => createSyntheticSound(784, 300), 300); // G5
+        
         // Garantir navegação para última tela
         setTimeout(() => {
           console.log('FeedLevel: Navegando para tela final...');
@@ -1344,6 +1388,12 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
 export default function App() {
   const [step, setStep] = useState(STEPS.INTRO);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Controle de hidratação
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   const nextStep = useCallback(() => {
     if (isTransitioning) return; // Previne cliques múltiplos
@@ -1372,6 +1422,15 @@ export default function App() {
     
     setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning]);
+
+  // Aguarda hidratação antes de renderizar conteúdo com valores aleatórios
+  if (!isMounted) {
+    return (
+      <div className="relative w-full h-screen bg-[#0f0c29] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-screen bg-[#0f0c29] overflow-hidden font-sans antialiased">
