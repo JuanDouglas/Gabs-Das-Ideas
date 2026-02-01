@@ -110,7 +110,66 @@ const playSound = (filename: string, fallbackFreq: number = 440, fallbackType: O
 };
 
 // Hook para usar o contexto de som
-const useSoundContext = () => useContext(SoundContext); 
+const useSoundContext = () => useContext(SoundContext);
+
+// Efeito de explosão para bombas
+const createExplosionEffect = (x: number, y: number) => {
+  const container = document.body;
+  
+  // Criar partículas de explosão
+  for (let i = 0; i < 12; i++) {
+    const particle = document.createElement('div');
+    const angle = (Math.PI * 2 * i) / 12;
+    const velocity = 80 + Math.random() * 40;
+    const tx = Math.cos(angle) * velocity;
+    const ty = Math.sin(angle) * velocity;
+    
+    particle.style.position = 'fixed';
+    particle.style.left = `${x}%`;
+    particle.style.top = `${y}%`;
+    particle.style.width = '8px';
+    particle.style.height = '8px';
+    particle.style.backgroundColor = ['#ff4444', '#ff6600', '#ffaa00', '#ff0000'][Math.floor(Math.random() * 4)];
+    particle.style.borderRadius = '50%';
+    particle.style.pointerEvents = 'none';
+    particle.style.zIndex = '9999';
+    particle.style.boxShadow = '0 0 10px currentColor';
+    
+    particle.animate([
+      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+      { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+    ], {
+      duration: 600 + Math.random() * 400,
+      easing: 'cubic-bezier(0, .9, .57, 1)'
+    }).onfinish = () => particle.remove();
+    
+    container.appendChild(particle);
+  }
+  
+  // Efeito de flash
+  const flash = document.createElement('div');
+  flash.style.position = 'fixed';
+  flash.style.left = `${x}%`;
+  flash.style.top = `${y}%`;
+  flash.style.width = '60px';
+  flash.style.height = '60px';
+  flash.style.backgroundColor = '#ffffff';
+  flash.style.borderRadius = '50%';
+  flash.style.pointerEvents = 'none';
+  flash.style.zIndex = '9999';
+  flash.style.transform = 'translate(-50%, -50%)';
+  flash.style.boxShadow = '0 0 30px #ffffff, 0 0 60px #ff6600';
+  
+  flash.animate([
+    { transform: 'translate(-50%, -50%) scale(0)', opacity: 1 },
+    { transform: 'translate(-50%, -50%) scale(2)', opacity: 0 }
+  ], {
+    duration: 300,
+    easing: 'ease-out'
+  }).onfinish = () => flash.remove();
+  
+  container.appendChild(flash);
+}; 
 
 const STEPS = {
   INTRO: 0,
@@ -354,7 +413,7 @@ const BackgroundMusic = () => {
     const audio = new Audio();
     audio.src = MUSIC_URL;
     audio.loop = true;
-    audio.volume = 0.4;
+    audio.volume = 0.2; // Volume reduzido
     audio.preload = 'metadata';
     
     const handleCanPlayThrough = () => setLoaded(true);
@@ -542,8 +601,17 @@ const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({ onStar
             if (item.type === 'bomb') {
               scoreDelta -= 5;
               hitBomb = true;
+              
+              // Som de explosão de bomba
+              playSound('./explosion.wav', 200, 'sawtooth');
+              
+              // Efeito visual de explosão
+              createExplosionEffect(item.x, newY);
             } else {
-              scoreDelta += 1;
+              scoreDelta += 1; // Corações valem 1 ponto
+              
+              // Som de coleta de coração
+              playSound('./heart.wav', 800, 'sine');
             }
           } else if (newY <= 100) {
             nextItems.push({ ...item, y: newY });
@@ -761,10 +829,12 @@ const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, r
     haptic([10]);
     setScore(s => s + 1);
     
-    // Efeito sonoro
-    const audio = new Audio('./dale.wav');
-    audio.volume = 0.6;
-    audio.play().catch(err => console.log('Audio play failed:', err));
+    // Efeito sonoro - verifica se som está habilitado
+    if (globalSoundEnabled) {
+      const audio = new Audio('./dale.wav');
+      audio.volume = 0.7;
+      audio.play().catch(err => console.log('Audio play failed:', err));
+    }
     
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#ffffff', '#ffa500', '#ff69b4'];
     for (let i = 0; i < 20; i++) {
@@ -889,7 +959,6 @@ const DistanceLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, 
           <p className="text-gray-400 text-sm max-w-xs mx-auto">A distância tenta atrapalhar, mas nosso amor viaja rápido.</p>
           
           <div className="flex items-center justify-center gap-3 text-xs font-mono text-pink-400/80 bg-black/40 px-4 py-2 rounded-full border border-pink-500/20 w-fit mx-auto">
-            <Map size={14} />
             <span className="tracking-wider">BSB ↔ GYN</span>
           </div>
         </div>
@@ -1299,7 +1368,7 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
         </div>
       
       {activeConfetti && (
-        <div className="confetti-container">
+        <div className="confetti-container" style={{ zIndex: 1 }}>
           <ConfettiExplosion x={`${activeConfetti.x}px`} y={`${activeConfetti.y}px`} />
         </div>
       )}
@@ -1464,7 +1533,7 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
 
       {/* Container de confetes fora da div de rolagem */}
       {activeConfetti && (
-        <div className="confetti-container">
+        <div className="confetti-container" style={{ zIndex: 1 }}>
           <ConfettiExplosion x={`${activeConfetti.x}px`} y={`${activeConfetti.y}px`} />
         </div>
       )}
@@ -1483,6 +1552,51 @@ export default function App() {
   // Controle de hidratação
   useEffect(() => {
     setIsMounted(true);
+    
+    // Debug: Funções de desenvolvedor no console
+    if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined') {
+      (window as any).setLevel = (levelNumber: number) => {
+        if (levelNumber >= STEPS.INTRO && levelNumber <= STEPS.FINAL) {
+          setStep(levelNumber);
+          console.log(`✅ Nível definido para: ${levelNumber}`);
+          console.log('Níveis disponíveis:');
+          console.log('0 - INTRO (Tela inicial)');
+          console.log('1 - LEVEL_1 (Campus)');
+          console.log('2 - LEVEL_2 (Texto digitado)');
+          console.log('3 - LEVEL_3 (Ano Novo)');
+          console.log('4 - LEVEL_4 (Jogo dos corações)');
+          console.log('5 - LEVEL_5 (Distância)');
+          console.log('6 - FINAL (Galeria/Final)');
+        } else {
+          console.error(`❌ Nível inválido! Use um valor entre ${STEPS.INTRO} e ${STEPS.FINAL}`);
+        }
+      };
+      
+      (window as any).listLevels = () => {
+        console.log('🎮 Níveis do jogo:');
+        console.log('0 - INTRO: Tela inicial');
+        console.log('1 - LEVEL_1: Campus (CPBR)');
+        console.log('2 - LEVEL_2: Texto digitado');
+        console.log('3 - LEVEL_3: Ano Novo (Tap game)');
+        console.log('4 - LEVEL_4: Jogo dos corações');
+        console.log('5 - LEVEL_5: Distância');
+        console.log('6 - FINAL: Galeria/Final');
+        console.log('');
+        console.log('💻 Comandos disponíveis:');
+        console.log('setLevel(n) - Vai para o nível n');
+        console.log('listLevels() - Lista todos os níveis');
+        console.log('getCurrentLevel() - Mostra o nível atual');
+      };
+      
+      (window as any).getCurrentLevel = () => {
+        const currentStep = step;
+        console.log(`📍 Nível atual: ${currentStep}`);
+        return currentStep;
+      };
+      
+      console.log('🔧 Console de desenvolvedor ativado!');
+      console.log('Digite listLevels() para ver todos os comandos disponíveis');
+    }
   }, []);
   
   const nextStep = useCallback(() => {
