@@ -110,29 +110,53 @@ const useHaptic = () => {
   return trigger;
 };
 
-const TypewriterText = ({
+const TypewriterText = React.memo(({
   text,
   delay = 40,
-  className
+  className,
+  onComplete
 }: {
   text: string;
   delay?: number;
   className?: string;
+  onComplete?: () => void;
 }) => {
   const [displayedText, setDisplayedText] = useState('');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
+  const startTyping = useCallback(() => {
+    setDisplayedText('');
     let index = 0;
-    const interval = setInterval(() => {
+    
+    intervalRef.current = setInterval(() => {
       setDisplayedText(text.slice(0, index + 1));
       index++;
-      if (index >= text.length) clearInterval(interval);
+      
+      if (index >= text.length) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        onComplete?.();
+      }
     }, delay);
-    return () => clearInterval(interval);
-  }, [text, delay]);
+  }, [text, delay, onComplete]);
+
+  useEffect(() => {
+    startTyping();
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [startTyping]);
 
   return <span className={className}>{displayedText}</span>;
-};
+});
+
+TypewriterText.displayName = 'TypewriterText';
 
 // --- Componentes do Jogo ---
 
@@ -193,6 +217,37 @@ const StarElement = React.memo<StarElementProps>(({ top, left, delay, size = 12 
 ));
 StarElement.displayName = 'StarElement';
 
+// Componente de fundo estrelado reutilizável
+interface StarryBackgroundProps {
+  density?: number;
+  className?: string;
+}
+
+const StarryBackground = React.memo<StarryBackgroundProps>(({ density = 120, className = "" }) => {
+  const stars = useMemo(() => [...Array(density)].map((_, i) => ({
+    id: i,
+    top: Math.random() * 100,
+    left: Math.random() * 100,
+    delay: Math.random() * 5,
+    size: Math.random() * 2 + 1
+  })), [density]);
+
+  return (
+    <div className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}>
+      {stars.map((star) => (
+        <StarElement 
+          key={star.id} 
+          top={star.top} 
+          left={star.left} 
+          delay={star.delay} 
+          size={star.size} 
+        />
+      ))}
+    </div>
+  );
+});
+StarryBackground.displayName = 'StarryBackground';
+
 const useDaysTogether = (startDate: string) => {
   const [days, setDays] = useState(0);
   useEffect(() => {
@@ -209,33 +264,72 @@ const useDaysTogether = (startDate: string) => {
 
 const BackgroundMusic = () => {
   const [playing, setPlaying] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const audio = new Audio(MUSIC_URL);
+    
+    const audio = new Audio();
+    audio.src = MUSIC_URL;
     audio.loop = true;
     audio.volume = 0.4;
+    audio.preload = 'metadata';
+    
+    const handleCanPlayThrough = () => setLoaded(true);
+    const handleError = () => {
+      setError(true);
+      console.warn('Falha ao carregar música de fundo');
+    };
+    
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('error', handleError);
+    
     audioRef.current = audio;
+    
     return () => {
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.removeEventListener('error', handleError);
       audio.pause();
       audioRef.current = null;
     };
   }, []);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (playing) audioRef.current.pause();
-    else audioRef.current.play().catch(() => {});
-    setPlaying(!playing);
-  };
+  const togglePlay = useCallback(() => {
+    if (!audioRef.current || !loaded || error) return;
+    
+    try {
+      if (playing) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch((err) => {
+          console.warn('Erro ao reproduzir música:', err);
+          setError(true);
+        });
+      }
+      setPlaying(!playing);
+    } catch (err) {
+      console.warn('Erro no controle de música:', err);
+    }
+  }, [playing, loaded, error]);
+
+  if (error) return null;
 
   return (
     <button
       onClick={togglePlay}
-      className="fixed top-4 right-4 z-[60] bg-white/10 backdrop-blur-md p-3 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-all shadow-lg border border-white/10"
+      disabled={!loaded}
+      className="fixed top-4 right-4 z-[60] bg-white/10 backdrop-blur-md p-3 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-all shadow-lg border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      aria-label={playing ? "Pausar música de fundo" : "Tocar música de fundo"}
     >
-      {playing ? <Volume2 size={20} className="text-green-400" /> : <VolumeX size={20} />}
+      {!loaded ? (
+        <div className="w-5 h-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+      ) : playing ? (
+        <Volume2 size={20} className="text-green-400" />
+      ) : (
+        <VolumeX size={20} />
+      )}
     </button>
   );
 };
@@ -248,6 +342,7 @@ interface ConfettiParticleProps {
     ty: number;
     duration: number;
     delay: number;
+    rotation?: number;
   };
   originX: string;
   originY: string;
@@ -255,40 +350,43 @@ interface ConfettiParticleProps {
 
 const ConfettiParticle = React.memo<ConfettiParticleProps>(({ particle, originX, originY }) => (
   <div
-    className={`fixed w-3 h-3 rounded-full ${particle.color} pointer-events-none z-[100]`}
+    className={`fixed w-4 h-4 rounded-full ${particle.color} pointer-events-none shadow-lg`}
     style={{
       left: originX,
       top: originY,
-      transform: `translate(${particle.tx}vw, ${particle.ty}vh)`,
-      animation: `explode ${particle.duration}s cubic-bezier(0.25, 1, 0.5, 1) forwards`,
-      animationDelay: `${particle.delay}s`
+      '--tx': `${particle.tx}px`,
+      '--ty': `${particle.ty}px`,
+      animation: `confettiExplode ${particle.duration}s cubic-bezier(0.25, 1, 0.5, 1) forwards`,
+      animationDelay: `${particle.delay}s`,
+      zIndex: 9999 + Math.floor(Math.random() * 100) // Z-index dinâmico para sobreposição natural
     } as React.CSSProperties}
   />
 ));
 ConfettiParticle.displayName = 'ConfettiParticle';
 
 const ConfettiExplosion = ({ x = '50%', y = '50%' }: { x?: string; y?: string }) => {
-  const particles = useMemo(() => [...Array(100)].map((_, i) => ({
-    id: i,
-    color: ['bg-pink-500', 'bg-purple-500', 'bg-blue-400', 'bg-yellow-400', 'bg-white', 'bg-red-500'][Math.floor(Math.random() * 6)],
-    tx: (Math.random() - 0.5) * 300, 
-    ty: (Math.random() - 0.5) * 300, 
-    duration: Math.random() * 2 + 1,
-    delay: Math.random() * 0.1
-  })), []);
+  const particles = useMemo(() => [...Array(250)].map((_, i) => {
+    const angle = (Math.PI * 2 * i) / 250 + Math.random() * 0.5;
+    const radius = Math.random() * 300 + 100;
+    const tx = Math.cos(angle) * radius;
+    const ty = Math.sin(angle) * radius - Math.random() * 200; // Bias para cima
+    
+    return {
+      id: i,
+      color: ['bg-pink-500', 'bg-purple-500', 'bg-blue-400', 'bg-yellow-400', 'bg-white', 'bg-red-500', 'bg-green-500', 'bg-orange-500', 'bg-cyan-400', 'bg-lime-400'][Math.floor(Math.random() * 10)],
+      tx,
+      ty,
+      duration: Math.random() * 3 + 2.5,
+      delay: Math.random() * 0.4,
+      rotation: Math.random() * 360
+    };
+  }), []);
   
   return (
     <>
       {particles.map((particle) => (
         <ConfettiParticle key={particle.id} particle={particle} originX={x} originY={y} />
       ))}
-      <style>{`
-        @keyframes explode { 
-          0% { transform: translate(0, 0) scale(0.5); opacity: 1; } 
-          10% { opacity: 1; }
-          100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } 
-        }
-      `}</style>
     </>
   );
 };
@@ -424,6 +522,7 @@ const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({ onStar
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] -z-10" />
+      <StarryBackground density={150} className="-z-10" />
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 60, repeat: Infinity, ease: "linear" }} className="absolute top-[-20%] right-[-20%] w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
       {!gameWon ? (
@@ -534,6 +633,7 @@ const CampusLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, re
       className="absolute inset-0 w-full h-full bg-[#1a1a2e] flex flex-col items-center justify-center p-6"
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
+      <StarryBackground density={80} className="-z-10" />
       <div className="w-full max-w-md space-y-6">
         <div className="flex items-center justify-between text-white/60 text-sm font-bold uppercase tracking-wider">
           <span>Level 01</span><span>The Meeting</span>
@@ -574,11 +674,11 @@ const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, r
     haptic([10]);
     setScore(s => s + 1);
     
-    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#ffffff'];
-    for (let i = 0; i < 12; i++) {
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#ffffff', '#ffa500', '#ff69b4'];
+    for (let i = 0; i < 20; i++) {
         const particle = document.createElement('div');
         const angle = Math.random() * Math.PI * 2;
-        const velocity = Math.random() * 60 + 20; 
+        const velocity = Math.random() * 120 + 80; 
         const tx = Math.cos(angle) * velocity;
         const ty = Math.sin(angle) * velocity;
         const color = colors[Math.floor(Math.random() * colors.length)];
@@ -586,17 +686,18 @@ const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, r
         particle.style.position = 'fixed';
         particle.style.left = `${e.clientX}px`;
         particle.style.top = `${e.clientY}px`;
-        particle.style.width = '6px';
-        particle.style.height = '6px';
+        particle.style.width = Math.random() * 8 + 4 + 'px';
+        particle.style.height = particle.style.width;
         particle.style.backgroundColor = color;
         particle.style.borderRadius = '50%';
         particle.style.pointerEvents = 'none';
+        particle.style.boxShadow = `0 0 ${Math.random() * 10 + 5}px ${color}`;
         
         particle.animate([
             { transform: 'translate(0, 0) scale(1)', opacity: 1 },
             { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
         ], {
-            duration: 600 + Math.random() * 400,
+            duration: 1000 + Math.random() * 600,
             easing: 'cubic-bezier(0, .9, .57, 1)'
         }).onfinish = () => particle.remove();
 
@@ -615,6 +716,7 @@ const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, r
       onClick={handleTap}
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
+      <StarryBackground density={90} className="-z-10" />
       <div className="absolute inset-0 opacity-30 pointer-events-none">
          <motion.div animate={{ opacity: 0.5 }} transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }} className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-purple-900 to-transparent" />
          <motion.div animate={{ opacity: 0.3 }} transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse", delay: 1 }} className="absolute top-20 left-20 w-64 h-64 bg-yellow-500/20 rounded-full blur-3xl" />
@@ -685,6 +787,7 @@ const DistanceLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, 
       className="absolute inset-0 w-full h-full bg-[#1e1e24] flex flex-col items-center justify-center p-8 text-white relative"
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
+      <StarryBackground density={70} className="-z-10" />
       <div className="w-full max-w-md text-center space-y-12">
         <div className="space-y-4">
           <div className="inline-block p-4 bg-red-500/20 rounded-full mb-2 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
@@ -696,8 +799,6 @@ const DistanceLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, 
           <div className="flex items-center justify-center gap-3 text-xs font-mono text-pink-400/80 bg-black/40 px-4 py-2 rounded-full border border-pink-500/20 w-fit mx-auto">
             <Map size={14} />
             <span className="tracking-wider">BSB ↔ GYN</span>
-            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_5px_#4ade80]"></div>
-            <span className="text-white">Conectando...</span>
           </div>
         </div>
         
@@ -794,6 +895,7 @@ const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNex
       className="absolute inset-0 w-full h-full bg-slate-950 flex flex-col items-center justify-center p-6 text-white overflow-hidden"
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
+      <StarryBackground density={300} className="-z-10" />
       <div className="absolute inset-0">
         {stars.map((star, i) => (
           <StarElement key={i} top={star.top} left={star.left} delay={star.delay} size={star.size} />
@@ -896,9 +998,10 @@ const FeedLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref)
   return (
     <motion.div 
       ref={ref}
-      className="absolute inset-0 w-full h-full bg-[#fde047] flex flex-col items-center justify-center p-6 text-yellow-900"
+      className="absolute inset-0 w-full h-full bg-[#fde047] flex flex-col items-center justify-center p-6 text-yellow-900 relative"
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
+      <StarryBackground density={60} className="-z-10 opacity-20" />
       <div className="text-center mb-8">
         <h2 className="text-4xl font-black uppercase mb-2">Hora do Lanche!</h2>
         <p className="text-yellow-800 font-bold opacity-70">A Gaby está com fome! Clique rápido!</p>
@@ -928,7 +1031,7 @@ const FeedLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref)
           className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10"
         >
           <div className="bg-white p-8 rounded-3xl text-center shadow-2xl">
-            <div className="text-6xl mb-4">😋</div>
+            <img src="./fome.png" className="w-full h-full object-cover" alt="Sticker" />
             <h3 className="text-2xl font-bold">Buchin Cheio!</h3>
           </div>
         </motion.div>
@@ -974,6 +1077,21 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    
+    setActiveConfetti({ x, y });
+    haptic([20, 50, 20]);
+    
+    setTimeout(() => {
+      setActiveConfetti(null);
+    }, 4000);
+  };
+
   const handleTerminalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = terminalInput.toLowerCase().trim();
@@ -1014,46 +1132,46 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleButtonConfetti = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    
     const rect = e.currentTarget.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
     
     setActiveConfetti({ x, y });
-    haptic([20, 50]);
-    setTimeout(() => setActiveConfetti(null), 2000);
+    haptic([20, 50, 20]);
+    
+    setTimeout(() => {
+      setActiveConfetti(null);
+    }, 4000);
   };
 
   return (
     <motion.div 
       ref={ref}
-      className="absolute inset-0 w-full h-full text-white overflow-y-auto"
+      className="absolute inset-0 w-full h-full text-white"
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
-      <div className="fixed inset-0 bg-gradient-to-br from-[#050510] via-[#1a103c] to-[#000000] -z-50" />
-      <div className="fixed inset-0 -z-40">
-         {[...Array(80)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-white rounded-full opacity-60 animate-pulse"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                width: `${Math.random() * 2 + 1}px`,
-                height: `${Math.random() * 2 + 1}px`,
-                animationDelay: `${Math.random() * 5}s`
-              }}
-            />
-         ))}
-      </div>
+      {/* Container de rolagem */}
+      <div className="w-full h-full overflow-y-auto">
+        {/* Fundo que acompanha a rolagem */}
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#000000] via-[#1a103c] to-[#2a0845]" />
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        
+        {/* Estrelas que acompanham a rolagem */}
+        <div className="absolute inset-0 w-full h-full">
+          <StarryBackground density={400} className="absolute inset-0 w-full h-full" />
+          <StarryBackground density={150} className="absolute inset-0 w-full h-full" />
+        </div>
       
       {activeConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-[100]">
+        <div className="confetti-container">
           <ConfettiExplosion x={`${activeConfetti.x}px`} y={`${activeConfetti.y}px`} />
         </div>
       )}
 
-      <div className="relative z-10 flex flex-col items-center p-6 pb-32 min-h-full">
+        <div className="relative z-50 flex flex-col items-center p-6 pb-32 min-h-screen">
         <div className="text-center mt-12 mb-12 relative">
           <motion.h1 
             initial={{ scale: 0.8, opacity: 0 }} 
@@ -1092,7 +1210,7 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
                 initial={{ opacity: 0, y: 50, rotate: rotation * 3 }} 
                 animate={{ opacity: 1, y: 0, rotate: rotation }} 
                 transition={{ delay: i * 0.2 + 0.5, type: "spring", stiffness: 100 }} 
-                className={`relative bg-white p-3 pb-10 shadow-2xl max-w-[85%] ${align} transform hover:scale-105 transition-transform duration-300 z-0 hover:z-10 cursor-pointer`} 
+                className={`relative bg-white p-3 pb-10 shadow-2xl max-w-[85%] ${align} transform hover:scale-105 transition-transform duration-300 z-10 hover:z-20 cursor-pointer`} 
                 style={{ borderRadius: '2px' }}
                 onClick={handleCardClick} 
               >
@@ -1114,20 +1232,32 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
           })}
         </div>
 
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2.5 }} className="mt-32 relative bg-[#fff9c4] text-gray-900 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-1 max-w-xs w-full font-serif">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2.5 }} className="mt-32 relative bg-[#fff9c4] text-gray-900 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-1 max-w-xs w-full font-serif cursor-pointer hover:scale-105 transition-transform duration-300" onClick={handleCardClick}>
            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-500 shadow-md"></div>
            <TypewriterText text="Não importa a fase, o nível ou a dificuldade. Meu jogo favorito é viver a vida com você." delay={50} className="font-handwriting text-3xl leading-snug" />
            <p className="font-handwriting text-2xl text-pink-600 font-bold mt-6 text-right">- Te amo, Gaby.</p>
         </motion.div>
 
-        <button onClick={onRestart} className="mt-24 px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold text-sm transition-all border border-white/20 backdrop-blur-md flex items-center gap-2 group hover:scale-105">
+        <button 
+          onClick={(e) => {
+            handleButtonConfetti(e);
+            setTimeout(() => onRestart(), 1000);
+          }} 
+          className="mt-24 px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold text-sm transition-all border border-white/20 backdrop-blur-md flex items-center gap-2 group hover:scale-105"
+          aria-label="Reiniciar jogo com efeito de confetes"
+        >
           <Gamepad2 size={18} className="group-hover:rotate-12 transition-transform" />Reiniciar Jogo
         </button>
       </div>
 
       <AnimatePresence>
         {showTerminal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/95 font-mono" style={{ touchAction: 'none' }}>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="terminal-fullscreen flex items-center justify-center p-6 bg-black font-mono no-touch-action"
+          >
             <div className="w-full max-w-md space-y-4">
               <div className="text-green-500 text-xs mb-4 space-y-1">
                 <p>{'>'} SYSTEM BREACH DETECTED...</p>
@@ -1139,12 +1269,33 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
                    <label className="block text-green-400 text-sm tracking-wider uppercase mb-2">{terminalError ? <span className="text-red-500">ACCESS DENIED</span> : 'Enter Password:'}</label>
                    <div className="flex items-center border-b border-green-500/30 pb-2">
                      <span className="text-green-500 mr-2 blink">{'>'}</span>
-                     <input type="text" autoFocus value={terminalInput} onChange={(e) => setTerminalInput(e.target.value)} className="bg-transparent border-none outline-none text-green-400 w-full font-bold uppercase placeholder-green-900" placeholder="..." />
+                   <input 
+                     type="text" 
+                     autoFocus 
+                     value={terminalInput} 
+                     onChange={(e) => setTerminalInput(e.target.value)} 
+                     className="bg-transparent border-none outline-none text-green-400 w-full font-bold uppercase placeholder-green-900" 
+                     placeholder="Digite a senha..." 
+                     aria-label="Campo de entrada de senha do terminal"
+                     autoComplete="off"
+                   />
                    </div>
-                   <button type="submit" className="w-full bg-green-900/20 hover:bg-green-900/40 text-green-400 border border-green-500/50 py-2 text-xs uppercase tracking-widest transition-colors">Unlock</button>
+                   <button 
+                     type="submit" 
+                     className="w-full bg-green-900/20 hover:bg-green-900/40 text-green-400 border border-green-500/50 py-2 text-xs uppercase tracking-widest transition-colors"
+                     aria-label="Desbloquear acesso ao sistema"
+                   >
+                     Unlock
+                   </button>
                  </form>
               </div>
-              <button onClick={() => setShowTerminal(false)} className="text-gray-500 text-xs hover:text-white mt-4 w-full text-center">[ ABORT ]</button>
+              <button 
+                onClick={() => setShowTerminal(false)} 
+                className="text-gray-500 text-xs hover:text-white mt-4 w-full text-center"
+                aria-label="Fechar terminal"
+              >
+                [ ABORT ]
+              </button>
             </div>
           </motion.div>
         )}
@@ -1178,20 +1329,26 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
         )}
       </AnimatePresence>
 
-      <style>{`
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
-        .will-change-transform { will-change: transform; }
-        .blink { animation: blink 1s step-end infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
-      `}</style>
+      {/* Container de confetes fora da div de rolagem */}
+      {activeConfetti && (
+        <div className="confetti-container">
+          <ConfettiExplosion x={`${activeConfetti.x}px`} y={`${activeConfetti.y}px`} />
+        </div>
+      )}
+      
+      </div>
     </motion.div>
   );
 });
 
 export default function App() {
   const [step, setStep] = useState(STEPS.INTRO);
-  const nextStep = () => {
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  const nextStep = useCallback(() => {
+    if (isTransitioning) return; // Previne cliques múltiplos
+    
+    setIsTransitioning(true);
     setStep(s => {
       const nextStepValue = s + 1;
       if (nextStepValue > STEPS.FINAL) {
@@ -1201,11 +1358,20 @@ export default function App() {
       console.log('Avançando para step:', nextStepValue);
       return nextStepValue;
     });
-  };
-  const restart = () => {
+    
+    // Reset transition state after animation
+    setTimeout(() => setIsTransitioning(false), 800);
+  }, [isTransitioning]);
+  
+  const restart = useCallback(() => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
     console.log('Reiniciando jogo');
     setStep(STEPS.INTRO);
-  };
+    
+    setTimeout(() => setIsTransitioning(false), 800);
+  }, [isTransitioning]);
 
   return (
     <div className="relative w-full h-screen bg-[#0f0c29] overflow-hidden font-sans antialiased">
@@ -1244,6 +1410,54 @@ export default function App() {
         @keyframes scanline { 0% { top: 0% } 100% { top: 100% } }
         .animate-scanline { animation: scanline 2s linear infinite; }
         .will-change-transform { will-change: transform; }
+        .blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .confetti-container { 
+          z-index: 10000 !important; 
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          pointer-events: none !important;
+        }
+        .no-touch-action { touch-action: none; }
+        .shake-animation { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+        .terminal-fullscreen { 
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          z-index: 9999 !important;
+          background: rgba(0, 0, 0, 0.85) !important;
+          backdrop-filter: blur(15px) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(15px) saturate(180%) !important;
+        }
+        @keyframes confettiExplode { 
+          0% { 
+            transform: translate(0, 0) scale(1) rotate(0deg); 
+            opacity: 1; 
+            box-shadow: 0 0 15px currentColor;
+          } 
+          25% { 
+            opacity: 1; 
+            transform: translate(calc(var(--tx, 0) * 0.3), calc(var(--ty, 0) * 0.3)) scale(1.1) rotate(90deg);
+            box-shadow: 0 0 10px currentColor;
+          }
+          50% { 
+            opacity: 0.9; 
+            transform: translate(calc(var(--tx, 0) * 0.7), calc(var(--ty, 0) * 0.7)) scale(1) rotate(270deg);
+            box-shadow: 0 0 5px currentColor;
+          }
+          100% { 
+            transform: translate(var(--tx, 0), var(--ty, 0)) scale(0.2) rotate(720deg); 
+            opacity: 0; 
+            box-shadow: none;
+          } 
+        }
       `}</style>
     </div>
   );
