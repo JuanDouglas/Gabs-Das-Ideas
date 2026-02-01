@@ -70,7 +70,7 @@ const pageVariants = {
   animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
   exit: { opacity: 0, scale: 1.05, filter: "blur(10px)" }
 };
-const pageTransition = { duration: 1.2, ease: [0.22, 1, 0.36, 1] };
+const pageTransition = { duration: 1.2 };
 
 // --- Utilities ---
 
@@ -741,6 +741,7 @@ const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ onRestar
               <button 
                 onClick={() => setShowQrCode(false)} 
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"
+                aria-label="Fechar QR Code"
               >
                 <X size={24} />
               </button>
