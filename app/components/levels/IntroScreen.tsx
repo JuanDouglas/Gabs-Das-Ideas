@@ -13,6 +13,7 @@ import { GameItemElement, PlayerElement } from "../shared/GameItemElement";
 import { StarryBackground } from "../shared/StarryBackground";
 
 export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({ onStart }, ref) => {
+  const INFO_SEEN_KEY = "intro_protocol_seen";
   const [gameWon, setGameWon] = useState(false);
   const [score, setScore] = useState(0);
   const [items, setItems] = useState<GameItem[]>([]);
@@ -45,6 +46,12 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
     if (rocketRef.current) {
       rocketRef.current.style.left = "50%";
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hasSeen = window.localStorage.getItem(INFO_SEEN_KEY) === "1";
+    setShowInfoPopup(!hasSeen);
   }, []);
 
   const animate = useCallback((time: number) => {
@@ -230,14 +237,15 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }} 
-                className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+                className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
                 style={{ touchAction: "none" }}
               >
                 <motion.div 
                   initial={{ scale: 0.8, y: 50 }} 
                   animate={{ scale: 1, y: 0 }} 
-                  className="bg-white/10 border border-white/20 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl relative"
+                  className="bg-white/10 border border-white/20 p-8 rounded-3xl max-w-sm w-full text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)] relative backdrop-blur-xl ring-1 ring-white/10"
                 >
+                  <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-white/10 via-transparent to-white/5 pointer-events-none" />
                   <div className="w-16 h-16 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                     <Gamepad2 size={32} className="text-white" />
                   </div>
@@ -249,6 +257,9 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                   <motion.button 
                     onClick={() => {
                       haptic("medium");
+                      if (typeof window !== "undefined") {
+                        window.localStorage.setItem(INFO_SEEN_KEY, "1");
+                      }
                       setShowInfoPopup(false);
                     }} 
                     whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(0,0,0,0.15)" }}

@@ -81,7 +81,10 @@ export default function App() {
     
     setIsTransitioning(true);
     setStep(s => {
-      const nextStepValue = s + 1;
+      let nextStepValue = s + 1;
+      if (s === STEPS.LORE_5) {
+        nextStepValue = STEPS.FINAL;
+      }
       if (nextStepValue > STEPS.FINAL) {
         console.log("Tentativa de ir além da tela final, permanecendo em:", STEPS.FINAL);
         return STEPS.FINAL;
@@ -90,6 +93,14 @@ export default function App() {
       return nextStepValue;
     });
     
+    setTimeout(() => setIsTransitioning(false), 800);
+  }, [isTransitioning]);
+
+  const goToLoreAfterFeed = useCallback(() => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setStep(STEPS.LORE_5);
     setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning]);
   
@@ -129,7 +140,7 @@ export default function App() {
         {step === STEPS.LORE_3 && <LoreLevel key="lore3" loreKey="distance" onNext={nextStep} />}
         {step === STEPS.LEVEL_3 && <ConstellationLevel key="level3" onNext={nextStep} />}
         {step === STEPS.LORE_4 && <LoreLevel key="lore4" loreKey="stars" onNext={nextStep} />}
-        {step === STEPS.LEVEL_4 && <FeedLevel key="level4" onNext={nextStep} />}
+        {step === STEPS.LEVEL_4 && <FeedLevel key="level4" onNext={goToLoreAfterFeed} />}
         {step === STEPS.LORE_5 && <LoreLevel key="lore5" loreKey="care" onNext={nextStep} />}
         {step === STEPS.LEVEL_5 && (
           <FinalLevel 

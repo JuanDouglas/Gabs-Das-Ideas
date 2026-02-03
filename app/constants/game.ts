@@ -49,28 +49,28 @@ export const LORE_DATA = {
     title: "O Começo de Tudo",
     image: "./cpgo.jpg",
     date: "21 NOV 2025",
-    text: "Foi onde o player 1 encontrou o player 2. No meio de tanta tecnologia, o melhor algoritmo foi o destino nos juntando."
+    text: "Foi o dia em que o player 1 encontrou o player 2. Em meio a tanta tecnologia, o melhor algoritmo foi o destino juntando a gente."
   },
   celebration: {
     chapter: "Capítulo 02", 
     title: "Momentos de Alegria",
     image: "./ano_novo.jpeg",
     date: "31 DEZ 2023",
-    text: "Cada celebração se torna especial quando compartilhamos com quem amamos. Risadas que ecoam no tempo."
+    text: "Toda celebração fica maior quando é com quem a gente ama. Risos que continuam ecoando no tempo."
   },
   distance: {
     chapter: "Capítulo 03",
     title: "Superando Obstáculos", 
     image: "./surpresa.jpg",
     date: "17 JAN 2025",
-    text: "A distância é apenas um número quando dois corações estão conectados. Cada quilometro percorrido vale a pena."
+    text: "A distância vira só número quando dois corações estão conectados. Cada quilômetro percorrido valeu a pena."
   },
   stars: {
     chapter: "Capítulo 04",
     title: "Sob as Estrelas",
     image: "./ela_aqui.jpeg", 
     date: "25 JAN 2025",
-    text: "Mesmo longe, olhamos para o mesmo céu. As estrelas são testemunhas silenciosas do nosso amor."
+    text: "Mesmo longe, a gente olha para o mesmo céu. As estrelas guardam silêncio, mas testemunham o nosso amor."
   },
   care: {
     chapter: "Capítulo 05",

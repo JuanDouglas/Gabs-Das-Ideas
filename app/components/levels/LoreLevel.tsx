@@ -129,7 +129,7 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
                 <Lock size={16} className="text-pink-300 animate-pulse" />
               </div>
             </div>
-            <p className="text-xs font-mono text-pink-300 uppercase tracking-[0.2em]">Acessando Arquivo {loreData.chapter}</p>
+            <p className="text-xs font-mono text-pink-300 uppercase tracking-[0.2em]">Desbloqueando memória {loreData.chapter}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -216,10 +216,10 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
             >
                 <button 
                     onClick={handleNext}
-                    className="group relative flex items-center gap-4 px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-pink-500 rounded-full transition-all duration-300 overflow-hidden"
+                    className="group relative flex items-center gap-4 px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full transition-all duration-300 overflow-hidden backdrop-blur-md border border-white/10 shadow-lg"
                 >
                     <span className="relative z-10 text-sm font-medium tracking-widest uppercase text-white transition-colors">
-                        Próximo Capítulo
+                        Próximo
                     </span>
                     <div className="relative z-10 bg-white/20 p-1 rounded-full group-hover:bg-white/30 transition-colors duration-300">
                         <ArrowRight size={16} className="text-white" />

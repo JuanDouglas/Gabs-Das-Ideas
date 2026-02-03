@@ -66,11 +66,11 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
   };
 
   const starCoords = [
-    { top: "30%", left: "20%" }, 
-    { top: "60%", left: "35%" }, 
-    { top: "40%", left: "50%" }, 
-    { top: "65%", left: "65%" },
-    { top: "30%", left: "80%" }
+    { top: 30, left: 20 }, 
+    { top: 60, left: 35 }, 
+    { top: 40, left: 50 }, 
+    { top: 65, left: 65 },
+    { top: 30, left: 80 }
   ];
 
   return (
@@ -94,7 +94,11 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
       </div>
 
       <div className="relative w-full h-72 mx-auto max-w-sm">
-        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible filter drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]">
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible filter drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
           {starCoords.map((_, i) => {
             if (i < starCoords.length - 1 && points[i] && points[i+1]) {
                return (
@@ -122,7 +126,7 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
             key={i}
             data-star={i}
             className={`absolute w-12 h-12 -ml-6 -mt-6 rounded-full flex items-center justify-center transition-all duration-500 ${points[i] ? "bg-white shadow-[0_0_30px_white] scale-110" : "bg-white/10 hover:bg-white/20 border border-white/30"}`}
-            style={pos}
+            style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
             onClick={() => handleStarClick(i)}
             whileTap={{ scale: 0.9 }}
           >

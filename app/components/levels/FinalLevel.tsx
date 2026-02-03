@@ -219,12 +219,7 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
           })}
         </div>
 
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2.5 }} className="mt-32 relative bg-[#fff9c4] text-gray-900 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-1 max-w-xs w-full font-serif cursor-pointer hover:scale-105 transition-transform duration-300" onClick={handleCardClick(0)}>
-           {activeCardConfetti?.id === 0 && (
-             <div className="absolute inset-0 z-0 pointer-events-none">
-               <ConfettiExplosion x="50%" y="50%" instanceId={activeCardConfetti.instanceId} />
-             </div>
-           )}
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2.5 }} className="mt-32 relative bg-[#fff9c4] text-gray-900 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-1 max-w-xs w-full font-serif hover:scale-105 transition-transform duration-300">
            <div className="relative z-10">
            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-500 shadow-md"></div>
            <TypewriterText text="Não importa a fase, o nível ou a dificuldade. Meu jogo favorito é viver a vida com você." delay={50} className="font-handwriting text-3xl leading-snug" />
