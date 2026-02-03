@@ -51,28 +51,37 @@ export const BackgroundMusic = () => {
     
     const handleCanPlayThrough = () => {
       setLoaded(true);
-      console.log("Música carregada com sucesso");
+      console.log("M??sica carregada com sucesso");
+    };
+    
+    const handleLoadedMetadata = () => {
+      setLoaded(true);
+      console.log("Metadados da m??sica carregados");
     };
     
     const handleError = (e: Event) => {
       setError(true);
-      console.warn("Falha ao carregar música de fundo:", e);
+      console.warn("Falha ao carregar m??sica de fundo:", e);
     };
 
     const handleLoadedData = () => {
-      console.log("Dados da música carregados");
+      setLoaded(true);
+      console.log("Dados da m??sica carregados");
     };
     
     audio.addEventListener("canplaythrough", handleCanPlayThrough);
     audio.addEventListener("error", handleError);
     audio.addEventListener("loadeddata", handleLoadedData);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     
+    audio.load();
     audioRef.current = audio;
     
     return () => {
       audio.removeEventListener("canplaythrough", handleCanPlayThrough);
       audio.removeEventListener("error", handleError);
       audio.removeEventListener("loadeddata", handleLoadedData);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.pause();
       audioRef.current = null;
     };

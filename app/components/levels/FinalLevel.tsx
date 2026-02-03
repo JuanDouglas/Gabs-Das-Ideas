@@ -242,6 +242,7 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
         >
           <Gamepad2 size={18} className="group-hover:rotate-12 transition-transform" />Reiniciar Jogo
         </button>
+
       </div>
 
       <AnimatePresence>

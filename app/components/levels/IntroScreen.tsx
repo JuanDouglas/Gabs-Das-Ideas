@@ -156,6 +156,24 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
     }
   };
 
+  const resetIntroGame = (showPopup: boolean) => {
+    if (requestRef.current) {
+      cancelAnimationFrame(requestRef.current);
+      requestRef.current = null;
+    }
+    lastTimeRef.current = undefined;
+    spawnTimerRef.current = 0;
+    playerXRef.current = 50;
+    if (rocketRef.current) {
+      rocketRef.current.style.left = "50%";
+    }
+    setItems([]);
+    setScore(0);
+    setDamageEffect(false);
+    setGameWon(false);
+    setShowInfoPopup(showPopup);
+  };
+
   return (
     <motion.div 
       ref={setCombinedRef}
@@ -177,7 +195,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
               Evite as Bombas!
             </h2>
             <div className="flex justify-center items-center gap-4">
-               <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm">
+               <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-lg text-white/80">
                   <Heart size={20} className="fill-pink-500 text-pink-500" />
                   <span className="font-mono font-bold text-xl">
                     {score}/{POINTS_TO_WIN}
@@ -278,6 +296,13 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
           >
             <Gamepad2 size={18} className="group-hover:rotate-12 transition-transform" />Continuar
           </motion.button>
+          <button
+            onClick={() => resetIntroGame(false)}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-full text-xs font-semibold tracking-wide transition-all border border-white/10 backdrop-blur-md"
+            aria-label="Jogar novamente o primeiro jogo"
+          >
+            Jogar novamente.
+          </button>
         </motion.div>
       )}
     </motion.div>
