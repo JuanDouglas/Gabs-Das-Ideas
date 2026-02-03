@@ -100,4 +100,4 @@ export const STEPS = {
   FINAL: 11
 };
 
-export const POINTS_TO_WIN = 20;
+export const POINTS_TO_WIN = 30;

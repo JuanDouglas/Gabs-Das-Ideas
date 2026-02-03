@@ -23,6 +23,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rocketRef = useRef<HTMLDivElement | null>(null);
   const playerXRef = useRef(50);
+  const scoreRef = useRef(0);
   const requestRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | undefined>(undefined);
   const spawnTimerRef = useRef(0);
@@ -49,6 +50,10 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
   }, []);
 
   useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const hasSeen = window.localStorage.getItem(INFO_SEEN_KEY) === "1";
     setShowInfoPopup(!hasSeen);
@@ -57,9 +62,13 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
   const animate = useCallback((time: number) => {
     if (lastTimeRef.current !== undefined) {
       const deltaTime = time - lastTimeRef.current;
+      const progress = Math.min(scoreRef.current / POINTS_TO_WIN, 1);
+      const spawnInterval = 500 - (progress * 150);
+      const fallSpeed = 0.06 + (progress * 0.02);
+      const bombChance = 0.2 + (progress * 0.08);
       spawnTimerRef.current += deltaTime;
-      if (spawnTimerRef.current > 500) {
-        const isBomb = Math.random() < 0.2;
+      if (spawnTimerRef.current > spawnInterval) {
+        const isBomb = Math.random() < bombChance;
         setItems(prev => [...prev, { 
           id: Math.random(), 
           x: Math.random() * 90 + 5, 
@@ -76,7 +85,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
         let hitBomb = false;
 
         for (const item of limitedPrev) {
-          const newY = item.y + (0.06 * deltaTime);
+          const newY = item.y + (fallSpeed * deltaTime);
           const playerHitboxSize = 6;
           const verticalHitbox = newY > 75 && newY < 90;
           const horizontalHitbox = Math.abs(item.x - playerXRef.current) < playerHitboxSize;
