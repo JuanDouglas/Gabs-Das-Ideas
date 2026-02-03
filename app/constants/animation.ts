@@ -4,4 +4,4 @@ export const pageVariants = {
   exit: { opacity: 0, scale: 1.05, filter: "blur(10px)" }
 };
 
-export const pageTransition = { duration: 0.8, ease: [0.22, 1, 0.36, 1] };
+export const pageTransition = { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const };
