@@ -65,12 +65,37 @@ const MUSIC_URL = "https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3
 
 // Sistema de sons sintéticos como fallback
 let globalSoundEnabled = false;
+let audioContext: AudioContext | null = null;
+let isAudioInitialized = false;
 
-const createSyntheticSound = (frequency: number, duration: number = 200, type: OscillatorType = 'sine') => {
-  if (!globalSoundEnabled) return; // Respeita configuração de som
+// Inicializar AudioContext uma vez após primeira interação do usuário
+const initializeAudio = async () => {
+  if (isAudioInitialized) return;
   
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Para mobile, precisamos garantir que o context seja resumed
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+    
+    isAudioInitialized = true;
+    console.log('Audio inicializado com sucesso');
+  } catch (err) {
+    console.warn('Falha ao inicializar audio:', err);
+  }
+};
+
+const createSyntheticSound = (frequency: number, duration: number = 200, type: OscillatorType = 'sine') => {
+  if (!globalSoundEnabled || !audioContext) return;
+  
+  try {
+    // Verificar se o context está suspenso (comum no mobile)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -92,17 +117,26 @@ const createSyntheticSound = (frequency: number, duration: number = 200, type: O
 };
 
 // Usar apenas sons sintéticos (bips eletrônicos) ao invés de arquivos WAV falados
-const playSound = (filename: string, fallbackFreq: number = 440, fallbackType: OscillatorType = 'sine') => {
+const playSound = async (filename: string, fallbackFreq: number = 440, fallbackType: OscillatorType = 'sine') => {
   if (!globalSoundEnabled) return; // Respeita configuração de som
+  
+  // Garantir que o audio está inicializado
+  if (!isAudioInitialized) {
+    await initializeAudio();
+  }
   
   // Para sons especiais como dale.wav e melhore.wav, tentar carregar arquivo
   if (filename.includes('dale.wav') || filename.includes('melhore.wav')) {
-    const audio = new Audio(filename);
-    audio.volume = 0.5;
-    audio.play().catch(() => {
+    try {
+      const audio = new Audio(filename);
+      audio.volume = 0.5;
+      // No mobile, precisamos aguardar o load completo
+      audio.load();
+      await audio.play();
+    } catch (err) {
       // Se falhar, usar som sintético como fallback
       createSyntheticSound(fallbackFreq, 200, fallbackType);
-    });
+    }
   } else {
     // Para outros sons, usar diretamente sons sintéticos (mais limpos que WAV falados)
     createSyntheticSound(fallbackFreq, 200, fallbackType);
@@ -398,6 +432,7 @@ const BackgroundMusic = () => {
   const [playing, setPlaying] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { setSoundEnabled } = useSoundContext();
 
@@ -406,6 +441,28 @@ const BackgroundMusic = () => {
     globalSoundEnabled = playing;
     setSoundEnabled(playing);
   }, [playing, setSoundEnabled]);
+
+  // Detectar primeira interação do usuário (necessário para mobile)
+  useEffect(() => {
+    const handleFirstInteraction = async () => {
+      if (!userInteracted) {
+        setUserInteracted(true);
+        await initializeAudio();
+      }
+    };
+
+    // Escutar vários tipos de interação
+    const events = ['touchstart', 'click', 'keydown'];
+    events.forEach(event => {
+      document.addEventListener(event, handleFirstInteraction, { once: true, passive: true });
+    });
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleFirstInteraction);
+      });
+    };
+  }, [userInteracted]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -416,27 +473,45 @@ const BackgroundMusic = () => {
     audio.volume = 0.2; // Volume reduzido
     audio.preload = 'metadata';
     
-    const handleCanPlayThrough = () => setLoaded(true);
-    const handleError = () => {
+    // Para mobile, definir mais propriedades
+    audio.crossOrigin = 'anonymous';
+    
+    const handleCanPlayThrough = () => {
+      setLoaded(true);
+      console.log('Música carregada com sucesso');
+    };
+    
+    const handleError = (e) => {
       setError(true);
-      console.warn('Falha ao carregar música de fundo');
+      console.warn('Falha ao carregar música de fundo:', e);
+    };
+
+    const handleLoadedData = () => {
+      console.log('Dados da música carregados');
     };
     
     audio.addEventListener('canplaythrough', handleCanPlayThrough);
     audio.addEventListener('error', handleError);
+    audio.addEventListener('loadeddata', handleLoadedData);
     
     audioRef.current = audio;
     
     return () => {
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.removeEventListener('error', handleError);
+      audio.removeEventListener('loadeddata', handleLoadedData);
       audio.pause();
       audioRef.current = null;
     };
   }, []);
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback(async () => {
     if (!audioRef.current || !loaded || error) return;
+    
+    // Garantir inicialização do áudio no mobile
+    if (!isAudioInitialized) {
+      await initializeAudio();
+    }
     
     // Som de clique no botão - tom neutro
     playSound('./button.wav', 500, 'sine');
@@ -444,15 +519,30 @@ const BackgroundMusic = () => {
     try {
       if (playing) {
         audioRef.current.pause();
+        setPlaying(false);
       } else {
-        audioRef.current.play().catch((err) => {
-          console.warn('Erro ao reproduzir música:', err);
-          setError(true);
-        });
+        // Para mobile, garantir que o áudio está desbloqueado
+        try {
+          await audioRef.current.play();
+          setPlaying(true);
+        } catch (playError) {
+          console.warn('Erro ao reproduzir música:', playError);
+          
+          // Tentar novamente após um pequeno delay (pode ajudar no mobile)
+          setTimeout(async () => {
+            try {
+              await audioRef.current!.play();
+              setPlaying(true);
+            } catch (retryError) {
+              console.error('Falha definitiva ao reproduzir música:', retryError);
+              setError(true);
+            }
+          }, 100);
+        }
       }
-      setPlaying(!playing);
     } catch (err) {
       console.warn('Erro no controle de música:', err);
+      setError(true);
     }
   }, [playing, loaded, error]);
 
@@ -462,15 +552,21 @@ const BackgroundMusic = () => {
     <button
       onClick={togglePlay}
       disabled={!loaded}
-      className="fixed top-4 right-4 z-[60] bg-white/10 backdrop-blur-md p-3 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-all shadow-lg border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="fixed top-4 right-4 z-[60] bg-white/10 backdrop-blur-md p-3 rounded-full text-white/70 hover:text-white hover:bg-white/20 active:scale-95 active:bg-white/30 transition-all duration-200 shadow-lg border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation select-none"
       aria-label={playing ? "Pausar música de fundo" : "Tocar música de fundo"}
+      style={{ 
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation'
+      }}
     >
       {!loaded ? (
         <div className="w-5 h-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+      ) : error ? (
+        <VolumeX size={20} className="text-red-400" />
       ) : playing ? (
-        <Volume2 size={20} className="text-green-400" />
+        <Volume2 size={20} className="text-green-400 animate-pulse" />
       ) : (
-        <VolumeX size={20} />
+        <VolumeX size={20} className="text-white/70" />
       )}
     </button>
   );
@@ -1552,8 +1648,12 @@ export default function App() {
   // Controle de hidratação
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+  
+  // Debug: Console de desenvolvedor (separado para evitar problemas de hidratação)
+  useEffect(() => {
+    if (!isMounted) return;
     
-    // Debug: Funções de desenvolvedor no console
     if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined') {
       (window as any).setLevel = (levelNumber: number) => {
         if (levelNumber >= STEPS.INTRO && levelNumber <= STEPS.FINAL) {
@@ -1597,7 +1697,7 @@ export default function App() {
       console.log('🔧 Console de desenvolvedor ativado!');
       console.log('Digite listLevels() para ver todos os comandos disponíveis');
     }
-  }, []);
+  }, [isMounted, step]);
   
   const nextStep = useCallback(() => {
     if (isTransitioning) return; // Previne cliques múltiplos
