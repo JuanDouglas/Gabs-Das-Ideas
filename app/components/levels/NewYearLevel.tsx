@@ -20,7 +20,7 @@ export const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNe
     setScore(s => s + 1);
     
     if (isSoundEnabled()) {
-      const audio = new Audio("./dale.wav");
+      const audio = new Audio("./sounds/dale.wav");
       audio.volume = 0.7;
       audio.play().catch(err => console.log("Audio play failed:", err));
     }

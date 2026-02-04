@@ -1,42 +1,42 @@
 export const MEMORIES = {
   campus: {
-    url: "./cpgo.jpg",
+    url: "./images/cpgo.jpg",
     date: "21 NOV 2025",
     title: "O Encontro (CPBR)"
   },
   newYear: {
-    url: "./ano_novo.jpeg",
+    url: "./images/ano_novo.jpeg",
     date: "31 DEZ 2023",
     title: "Nosso Ano Novo"
   },
   gallery: [
     { 
       id: 1, 
-      url: "./primeiro.jpg", 
+      url: "./images/primeiro.jpg", 
       date: "21 DEZ 2025", 
       title: "Nosso primeiro encontro de verdade" 
     },
     { 
       id: 2, 
-      url: "./surpresa.jpg", 
+      url: "./images/surpresa.jpg", 
       date: "17 JAN 2025", 
       title: "Aquela Viagem" 
     },
     { 
       id: 3, 
-      url: "./ela_aqui.jpeg", 
+      url: "./images/ela_aqui.jpeg", 
       date: "25 JAN 2025", 
       title: "É incrível como sua presença é boa!" 
     },
     { 
       id: 4, 
-      url: "./aleatoria.jpg", 
+      url: "./images/aleatoria.jpg", 
       date: "HOJE", 
       title: "Cada momento conta" 
     },
     {
       id: 5,
-      url: "./proximos.png",
+      url: "./images/proximos.png",
       date: "FUTURO",
       title: "Próximas Fases"
     }
@@ -47,35 +47,35 @@ export const LORE_DATA = {
   intro: {
     chapter: "Capítulo 01",
     title: "O Começo de Tudo",
-    image: "./cpgo.jpg",
+    image: "./images/cpgo.jpg",
     date: "21 NOV 2025",
     text: "Foi o dia em que o player 1 encontrou o player 2. Em meio a tanta tecnologia, o melhor algoritmo foi o destino juntando a gente."
   },
   celebration: {
     chapter: "Capítulo 02", 
     title: "Momentos de Alegria",
-    image: "./ano_novo.jpeg",
+    image: "./images/ano_novo.jpeg",
     date: "31 DEZ 2023",
     text: "Toda celebração fica maior quando é com quem a gente ama. Risos que continuam ecoando no tempo."
   },
   distance: {
     chapter: "Capítulo 03",
     title: "Superando Obstáculos", 
-    image: "./surpresa.jpg",
+    image: "./images/surpresa.jpg",
     date: "17 JAN 2025",
     text: "A distância vira só número quando dois corações estão conectados. Cada quilômetro percorrido valeu a pena."
   },
   stars: {
     chapter: "Capítulo 04",
     title: "Sob as Estrelas",
-    image: "./ela_aqui.jpeg", 
+    image: "./images/ela_aqui.jpeg", 
     date: "25 JAN 2025",
     text: "Mesmo longe, a gente olha para o mesmo céu. As estrelas guardam silêncio, mas testemunham o nosso amor."
   },
   care: {
     chapter: "Capítulo 05",
     title: "Cuidado e Carinho",
-    image: "./aleatoria.jpg",
+    image: "./images/aleatoria.jpg",
     date: "HOJE", 
     text: "Cuidar um do outro é a forma mais pura de amor. Cada gesto pequeno constrói algo grande."
   }
@@ -83,7 +83,7 @@ export const LORE_DATA = {
 
 export type LoreKey = keyof typeof LORE_DATA;
 
-export const MUSIC_URL = "https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3";
+export const MUSIC_URL = "./sounds/background.mp3";
 
 export const STEPS = {
   INTRO: 0,

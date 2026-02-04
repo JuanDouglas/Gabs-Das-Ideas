@@ -90,7 +90,7 @@ export const BackgroundMusic = () => {
   const togglePlay = useCallback(async () => {
     if (!audioRef.current || !loaded || error) return;
     
-    playSound("./button.wav", 500, "sine");
+    playSound("./sounds/button.wav", 500, "sine");
     
     try {
       if (playing) {

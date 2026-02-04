@@ -90,7 +90,7 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
         setTerminalError(true);
         haptic([50, 50]);
         
-        const errorAudio = new Audio("./melhore.wav");
+        const errorAudio = new Audio("./sounds/melhore.wav");
         errorAudio.volume = 0.6;
         errorAudio.play().catch(() => {
           if (isSoundEnabled()) {
@@ -109,7 +109,7 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
       setTerminalError(true);
       haptic([50, 50]);
       
-      const errorAudio = new Audio("./melhore.wav");
+      const errorAudio = new Audio("./sounds/melhore.wav");
       errorAudio.volume = 0.6;
       errorAudio.play().catch(() => {
         if (isSoundEnabled()) {

@@ -19,7 +19,7 @@ export const FeedLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext 
   const handleFeed = () => {
     if (isComplete || navigationCalled) return; 
     
-    playSound("./eat.wav", 300, "square");
+    playSound("./sounds/eat.wav", 300, "square");
     
     setHunger(prev => {
       const newVal = prev + 5; 

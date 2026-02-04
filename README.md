@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gabs Das Ideias
 
-## Getting Started
+Projeto web interativo feito com Next.js que mistura narrativa, minigame e momentos especiais em uma jornada visual. A experiência é construída em níveis, com transições suaves, efeitos sonoros e animações para criar um clima emocional e divertido.
 
-First, run the development server:
+## O que é
+- Uma experiência em formato de “jogo” com fases e histórias.
+- Conteúdo focado em memória, surpresa e descoberta.
+- Interface com estética cósmica e efeitos visuais marcantes.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Principais recursos
+- Níveis animados com `framer-motion`.
+- Layouts e efeitos usando `Tailwind CSS`.
+- Sons e haptics para reforçar feedback.
+- Componentes compartilhados para cenários, fundo estrelado e efeitos.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura (resumo)
+- `app/components/levels/` níveis e telas principais.
+- `app/components/shared/` componentes reutilizáveis (efeitos, fundos, áudio).
+- `app/constants/` dados de jogo e textos.
+- `public/` imagens e sons.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
+- `npm run dev` inicia o servidor local.
+- `npm run build` gera o build de produção.
+- `npm run start` serve o build.
+- `npm run lint` executa o lint.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Requisitos de mídia
+Os sons necessários estão listados em `SONS_NECESSARIOS.md`.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Observações rápidas
+O projeto foi pensado como uma experiência pessoal e afetiva. A organização do código favorece a manutenção dos níveis e a evolução da narrativa, sem perder o ritmo visual.

@@ -24,7 +24,7 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
     if (points[index]) return;
     if (index > 0 && !points[index - 1]) return;
 
-    playSound("./star.wav", 800 + (index * 100), "triangle");
+    playSound("./sounds/star.wav", 800 + (index * 100), "triangle");
 
     const newPoints = [...points];
     newPoints[index] = true;

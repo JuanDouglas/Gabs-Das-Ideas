@@ -95,11 +95,11 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
               scoreDelta -= 5;
               hitBomb = true;
               
-              playSound("./explosion.wav", 200, "sawtooth");
+              playSound("./sounds/explosion.wav", 200, "sawtooth");
               createExplosionEffect(item.x, newY);
             } else {
               scoreDelta += 1;
-              playSound("./heart.wav", 800, "sine");
+              playSound("./sounds/heart.wav", 800, "sine");
               
               const heartEffect = document.createElement("div");
               heartEffect.innerHTML = "💖";
@@ -308,7 +308,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
             }} 
             whileTap={{ scale: 0.98 }} 
             onClick={() => { 
-              playSound("./start.wav", 440, "square"); 
+              playSound("./sounds/start.wav", 440, "square"); 
               haptic("medium");
               onStart(); 
             }}

@@ -41,7 +41,7 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
 
   const handleNext = () => {
     haptic("heavy");
-    playSound("./click.wav", 600, "sine");
+    playSound("./sounds/click.wav", 600, "sine");
     onNext?.();
   };
 
@@ -110,26 +110,92 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
       <AnimatePresence>
         {phase === "decrypting" && (
           <motion.div 
-            className="absolute z-50 flex flex-col items-center gap-4"
-            exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-            transition={{ duration: 0.8, ease: "circIn" }}
+            className="absolute z-50 flex flex-col items-center gap-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6, filter: "blur(6px)" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <div className="relative w-16 h-16">
-              <motion.span 
-                className="absolute inset-0 border-t-2 border-r-2 border-pink-400/70 rounded-full"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              <motion.span 
-                className="absolute inset-2 border-b-2 border-l-2 border-indigo-400/70 rounded-full"
-                animate={{ rotate: -360 }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Lock size={16} className="text-pink-300 animate-pulse" />
+            <motion.div
+              className="relative w-[24rem] max-w-[92vw] rounded-3xl border border-white/15 bg-white/5 backdrop-blur-2xl shadow-[0_30px_90px_rgba(0,0,0,0.45)] overflow-hidden ring-1 ring-white/10"
+              animate={{ boxShadow: ["0 25px 70px rgba(0,0,0,0.35)", "0 35px 90px rgba(0,0,0,0.55)", "0 25px 70px rgba(0,0,0,0.35)"] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5 pointer-events-none" />
+              <div className="absolute -top-10 right-6 h-24 w-24 rounded-full bg-pink-500/20 blur-2xl" />
+              <div className="absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl" />
+
+              <div className="relative z-10 px-6 pt-6 pb-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-12 w-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                      <Lock size={18} className="text-white" />
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-[10px] font-bold text-pink-300 uppercase tracking-[0.32em]">Desbloqueando memória</p>
+                      <p className="text-sm font-semibold tracking-wide text-white/90">{loreData.chapter}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-white/70 backdrop-blur-md shadow-lg">
+                    <span>Link</span>
+                    <span className="text-pink-200">0x{loreData.chapter.replace(/\D/g, "").padStart(2, "0")}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  {[
+                    { label: "Analisando fragmentos", tone: "from-pink-300/70 to-transparent", delay: 0 },
+                    { label: "Sincronizando memória", tone: "from-white/60 to-transparent", delay: 0.2 },
+                    { label: "Decodificando camada", tone: "from-indigo-300/70 to-transparent", delay: 0.4 },
+                  ].map((step, index) => (
+                    <motion.div
+                      key={step.label}
+                      className="flex items-center gap-3"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + index * 0.15 }}
+                    >
+                      <div className="h-2 w-2 rounded-full bg-white/70 shadow-[0_0_12px_rgba(255,255,255,0.25)]" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-white/60">
+                          <span>{step.label}</span>
+                          <span className="text-white/40">OK</span>
+                        </div>
+                        <div className="mt-1 h-[3px] w-full rounded-full bg-white/10 overflow-hidden">
+                          <motion.div
+                            className={`h-full bg-gradient-to-r ${step.tone}`}
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 1.4, delay: step.delay, ease: "easeOut" }}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-widest text-white/60">
+                    <Fingerprint size={14} className="text-pink-200" />
+                    <span>Sincronizando assinatura</span>
+                  </div>
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-pink-400/60 via-white/70 to-indigo-400/60"
+                      animate={{ x: ["-100%", "100%"] }}
+                      transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                  <span>Descriptografia em curso</span>
+                  <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.7, repeat: Infinity }}>
+                    Acesso IV
+                  </motion.span>
+                </div>
               </div>
-            </div>
-            <p className="text-xs font-mono text-pink-300 uppercase tracking-[0.2em]">Desbloqueando memória {loreData.chapter}</p>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
