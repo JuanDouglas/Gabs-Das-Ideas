@@ -23,6 +23,19 @@ export default function App() {
     setIsMounted(true);
   }, []);
   
+  // Easter Egg no console
+  useEffect(() => {
+    console.log(
+      "%c Warning: High levels of dopamine detected! ",
+      "background: #222; color: #bada55; font-size: 20px; padding: 10px;"
+    );
+    console.log(
+      "%c Se você está lendo isso, saiba que te amo em todos os ambientes, de dev a prod. ",
+      "color: #ec4899; font-style: italic;"
+    );
+    // ASCII Art opcional
+  }, []);
+  
   useEffect(() => {
     if (!isMounted) return;
     

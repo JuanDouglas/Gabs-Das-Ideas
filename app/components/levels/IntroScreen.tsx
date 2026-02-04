@@ -18,7 +18,14 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
   const [score, setScore] = useState(0);
   const [items, setItems] = useState<GameItem[]>([]);
   const [damageEffect, setDamageEffect] = useState(false);
-  const [showInfoPopup, setShowInfoPopup] = useState(true); 
+  const [showInfoPopup, setShowInfoPopup] = useState(true);
+  const [boundaryBreaker, setBoundaryBreaker] = useState({
+    attempts: 0,
+    unlocked: false,
+    showModal: false
+  });
+  const [rocketSkin, setRocketSkin] = useState<'rocket' | 'plane'>('rocket');
+  const [isMounted, setIsMounted] = useState(false); 
   
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rocketRef = useRef<HTMLDivElement | null>(null);
@@ -27,6 +34,10 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
   const requestRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | undefined>(undefined);
   const spawnTimerRef = useRef(0);
+  const boundaryAttemptTimeRef = useRef<number>(0);
+  const lastBoundaryDirection = useRef<'left' | 'right' | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   
   const { trigger: haptic } = useHaptic();
 
@@ -54,10 +65,25 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
   }, [score]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted || typeof window === "undefined") return;
+    
     const hasSeen = window.localStorage.getItem(INFO_SEEN_KEY) === "1";
     setShowInfoPopup(!hasSeen);
-  }, []);
+    
+    // Carregar estado do boundary breaker
+    const boundaryUnlocked = localStorage.getItem('boundary_breaker_unlocked') === 'true';
+    const savedSkin = localStorage.getItem('rocket_skin');
+    const validSkin = savedSkin === 'plane' ? 'plane' : 'rocket';
+    
+    if (boundaryUnlocked) {
+      setBoundaryBreaker(prev => ({ ...prev, unlocked: true }));
+      setRocketSkin(validSkin);
+    }
+  }, [isMounted]);
 
   const animate = useCallback((time: number) => {
     if (lastTimeRef.current !== undefined) {
@@ -165,10 +191,87 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
     if (!containerRef.current || gameWon || showInfoPopup) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = ((clientX - rect.left) / rect.width) * 100;
-    const clampedX = Math.min(95, Math.max(5, x));
+    
+    // Detectar tentativas de boundary breaking
+    const currentTime = performance.now();
+    let isAttemptingBreak = false;
+    let direction: 'left' | 'right' | null = null;
+    
+    if (x <= 0 || x >= 100) {
+      direction = x <= 0 ? 'left' : 'right';
+      isAttemptingBreak = true;
+      
+      // Se mudou de direção rapidamente, conta como tentativa
+      if (lastBoundaryDirection.current && lastBoundaryDirection.current !== direction) {
+        if (currentTime - boundaryAttemptTimeRef.current < 1500) {
+          setBoundaryBreaker(prev => {
+            const newAttempts = prev.attempts + 1;
+            if (newAttempts >= 5 && !prev.unlocked) {
+              triggerBoundaryBreaker();
+              return { attempts: newAttempts, unlocked: true, showModal: true };
+            }
+            return { ...prev, attempts: newAttempts };
+          });
+        }
+      }
+      
+      lastBoundaryDirection.current = direction;
+      boundaryAttemptTimeRef.current = currentTime;
+    }
+    
+    // Se o boundary breaker foi desbloqueado, permitir movimento além das bordas
+    const clampedX = boundaryBreaker.unlocked && isAttemptingBreak 
+      ? x // Permite ir além das bordas
+      : Math.min(95, Math.max(5, x)); // Comportamento normal
+    
     playerXRef.current = clampedX;
     if (rocketRef.current) {
         rocketRef.current.style.left = `${clampedX}%`;
+        
+        // Adicionar efeito visual quando quebra as bordas
+        if (boundaryBreaker.unlocked && (clampedX < 0 || clampedX > 100)) {
+          rocketRef.current.style.filter = 'hue-rotate(180deg) saturate(150%)';
+          rocketRef.current.style.transform = 'translateX(-50%) scale(1.1)';
+        } else {
+          rocketRef.current.style.filter = '';
+          rocketRef.current.style.transform = 'translateX(-50%) scale(1)';
+        }
+    }
+  };
+
+  const triggerBoundaryBreaker = () => {
+    haptic('explosion');
+    
+    // Efeito de glitch na tela
+    document.body.style.animation = 'glitch 0.3s ease-in-out';
+    setTimeout(() => {
+      document.body.style.animation = '';
+    }, 300);
+    
+    // Distorcer música por 1 segundo
+    const audioElement = document.querySelector('audio');
+    if (audioElement) {
+      const originalRate = audioElement.playbackRate;
+      audioElement.playbackRate = 0.3; // Distorção lenta
+      
+      setTimeout(() => {
+        if (audioElement) {
+          audioElement.playbackRate = originalRate;
+        }
+      }, 1000);
+    }
+    
+    // Som de glitch
+    playSound('./sounds/magic.wav', 100, 'sawtooth');
+    
+    // Desbloquear nova skin
+    const newSkin: 'plane' = 'plane'; // Sempre desbloqueia o avião
+    setRocketSkin(newSkin);
+    
+    // Salvar no localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('boundary_breaker_unlocked', 'true');
+      localStorage.setItem('rocket_skin', newSkin);
     }
   };
 
@@ -225,7 +328,52 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
             <GameItemElement key={item.id} item={item} />
           ))}
           
-          <PlayerElement ref={rocketRef} />
+          <PlayerElement ref={rocketRef} skin={rocketSkin} />
+          
+          {/* Botão flutuante para selecionar skin quando boundary breaker está ativo */}
+          <AnimatePresence>
+            {boundaryBreaker.unlocked && !showInfoPopup && (
+              <motion.div
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                className="absolute top-6 left-6 z-30"
+              >
+                <motion.button
+                  onClick={() => {
+                    const newSkin = rocketSkin === 'rocket' ? 'plane' : 'rocket';
+                    setRocketSkin(newSkin);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('rocket_skin', newSkin);
+                    }
+                    haptic('medium');
+                    playSound('./sounds/button.wav', 500, 'sine');
+                  }}
+                  whileHover={{ scale: 1.05, y: -1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-3 py-2 shadow-lg hover:bg-white/15 transition-all duration-300 group"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.15)',
+                  }}
+                >
+                  {/* Content */}
+                  <div className="relative z-10 flex items-center gap-2 text-white/80">
+                    <span className="text-lg">{rocketSkin === 'rocket' ? '✈️' : '🚀'}</span>
+                    <span className="text-xs font-medium">
+                      {rocketSkin === 'rocket' ? 'Avião' : 'Foguete'}
+                    </span>
+                  </div>
+                  
+                  {/* Tooltip */}
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    Trocar skin
+                  </div>
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           <div className="absolute bottom-10 w-full text-center space-y-2 pointer-events-none">
              <div className="text-white/30 text-xs uppercase tracking-widest">Arraste para pilotar</div>
@@ -285,6 +433,67 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                       <Rocket size={20} className="group-hover:rotate-12 transition-transform" />
                       Iniciar Missão
                     </span>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <AnimatePresence>
+            {boundaryBreaker.showModal && (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                className="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md"
+                onClick={() => setBoundaryBreaker(prev => ({ ...prev, showModal: false }))}
+              >
+                <motion.div 
+                  initial={{ scale: 0.9, y: 30 }} 
+                  animate={{ scale: 1, y: 0 }} 
+                  exit={{ scale: 0.95, y: 20 }}
+                  transition={{ type: 'spring', damping: 18, stiffness: 260 }}
+                  className="relative overflow-hidden border border-white/20 bg-white/10 backdrop-blur-2xl p-8 rounded-3xl max-w-md w-full text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5 pointer-events-none" />
+                  <div className="absolute -top-10 right-6 h-24 w-24 rounded-full bg-yellow-400/20 blur-2xl" />
+                  <div className="absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-pink-400/20 blur-2xl" />
+
+                  <motion.div 
+                    animate={{ scale: [1, 1.06, 1] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                    className="relative z-10 w-16 h-16 bg-gradient-to-tr from-yellow-300 to-orange-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg border border-yellow-200/70"
+                  >
+                    <div className="text-3xl">🏆</div>
+                  </motion.div>
+                  
+                  <motion.h2 
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="relative z-10 text-2xl font-semibold text-yellow-200 mb-1 tracking-wide"
+                  >
+                    Achievement Unlocked
+                  </motion.h2>
+                  
+                  <h3 className="relative z-10 text-lg font-semibold text-white/90 mb-4">
+                    🎯 Boundary Breaker
+                  </h3>
+                  
+                  <p className="relative z-10 text-white/70 text-sm mb-6 leading-relaxed">
+                    Você descobriu como quebrar as barreiras da realidade.<br/>
+                    <span className="text-yellow-200 font-semibold">Recompensa:</span> Avião desbloqueado ✈️<br/>
+                    <span className="text-white/50 text-xs">Use o botão no canto para alternar entre foguete e avião.</span>
+                  </p>
+                  
+                  <motion.button 
+                    onClick={() => setBoundaryBreaker(prev => ({ ...prev, showModal: false }))}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative z-10 w-full py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2 border border-white/15 backdrop-blur-md"
+                  >
+                    <span className="text-xl">✈️</span>
+                    Continuar Pilotando
                   </motion.button>
                 </motion.div>
               </motion.div>

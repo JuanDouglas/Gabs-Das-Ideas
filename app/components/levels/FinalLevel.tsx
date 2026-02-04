@@ -23,7 +23,12 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
   const [terminalError, setTerminalError] = useState(false);
   const [activeConfetti, setActiveConfetti] = useState<{ x: number; y: number } | null>(null); 
   const [activeCardConfetti, setActiveCardConfetti] = useState<{ id: number; instanceId: number } | null>(null);
+  const [flashSecret, setFlashSecret] = useState(false);
+  const [showSecretPolaroid, setShowSecretPolaroid] = useState(false);
   const cardConfettiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatRateRef = useRef(900);
   const { trigger: haptic } = useHaptic();
 
   useEffect(() => {
@@ -32,6 +37,16 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
     } else {
       document.body.style.overflow = "";
     }
+    return () => {
+      if (pressTimeoutRef.current) {
+        clearTimeout(pressTimeoutRef.current);
+        pressTimeoutRef.current = null;
+      }
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+    };
   }, [showTerminal, showQrCode]);
 
   const handleEasterEggClick = () => {
@@ -136,6 +151,57 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
     }, 4000);
   };
 
+  const stopHeartbeat = () => {
+    if (pressTimeoutRef.current) {
+      clearTimeout(pressTimeoutRef.current);
+      pressTimeoutRef.current = null;
+    }
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+    heartbeatRateRef.current = 900;
+  };
+
+  const startHeartbeat = () => {
+    if (heartbeatIntervalRef.current) return;
+    heartbeatRateRef.current = 900;
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([40, 80, 60]);
+      }
+      heartbeatRateRef.current = Math.max(260, heartbeatRateRef.current - 80);
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = setInterval(() => {
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate([35, 70, 55]);
+          }
+          heartbeatRateRef.current = Math.max(220, heartbeatRateRef.current - 60);
+        }, heartbeatRateRef.current);
+      }
+    }, heartbeatRateRef.current);
+  };
+
+  const handleSecretPressStart = () => {
+    if (showSecretPolaroid) return;
+    stopHeartbeat();
+    pressTimeoutRef.current = setTimeout(() => {
+      startHeartbeat();
+      haptic([40, 80, 40, 120]);
+      setTimeout(() => {
+        setFlashSecret(true);
+        setTimeout(() => setFlashSecret(false), 160);
+        setShowSecretPolaroid(true);
+        stopHeartbeat();
+      }, 1800);
+    }, 3000);
+  };
+
+  const handleSecretPressEnd = () => {
+    stopHeartbeat();
+  };
+
   return (
     <motion.div 
       ref={ref}
@@ -192,7 +258,11 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
                 transition={{ delay: i * 0.2 + 0.5, type: "spring", stiffness: 100 }} 
                 className={`relative bg-white p-3 pb-10 shadow-2xl max-w-[85%] ${align} transform hover:scale-105 transition-transform duration-300 z-10 hover:z-20 cursor-pointer`} 
                 style={{ borderRadius: "2px" }}
-                onClick={handleCardClick(mem.id)} 
+                onClick={handleCardClick(mem.id)}
+                onPointerDown={i === 0 ? handleSecretPressStart : undefined}
+                onPointerUp={i === 0 ? handleSecretPressEnd : undefined}
+                onPointerLeave={i === 0 ? handleSecretPressEnd : undefined}
+                onPointerCancel={i === 0 ? handleSecretPressEnd : undefined}
               >
                 {activeCardConfetti?.id === mem.id && (
                   <div className="absolute inset-0 z-0 pointer-events-none">
@@ -218,6 +288,25 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
             );
           })}
         </div>
+
+        {showSecretPolaroid && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, rotate: -4, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, rotate: -1, scale: 1 }}
+            transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
+            className="mt-16 relative bg-white p-3 pb-10 shadow-2xl max-w-[85%] w-full transform rotate-1"
+            style={{ borderRadius: "2px" }}
+          >
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-8 bg-white/20 backdrop-blur-sm transform -rotate-1 shadow-sm border border-white/30"></div>
+            <div className="aspect-[4/5] w-full overflow-hidden bg-gray-100 filter contrast-105">
+              <img src={MEMORIES.gallery[0]?.url} className="w-full h-full object-cover scale-105" alt="Memória secreta" />
+            </div>
+            <div className="mt-4 text-center">
+              <p className="font-handwriting text-gray-800 font-bold text-3xl transform -rotate-1 leading-none">Segredo Revelado</p>
+              <p className="font-handwriting text-gray-500 text-xl mt-2">Olhe por outro ângulo</p>
+            </div>
+          </motion.div>
+        )}
 
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 2.5 }} className="mt-32 relative bg-[#fff9c4] text-gray-900 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-1 max-w-xs w-full font-serif hover:scale-105 transition-transform duration-300">
            <div className="relative z-10">
@@ -327,6 +416,15 @@ export const FinalLevel = React.forwardRef<HTMLDivElement, FinalLevelProps>(({ o
             instanceId={Date.now() + Math.random()} 
           />
         </div>
+      )}
+
+      {flashSecret && (
+        <motion.div
+          className="fixed inset-0 bg-white z-[80] pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.8, 0] }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        />
       )}
       
       </div>

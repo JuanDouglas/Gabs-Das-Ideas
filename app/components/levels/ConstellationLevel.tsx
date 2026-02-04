@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Star } from "lucide-react";
 import type { LevelProps } from "../../types/game";
@@ -11,6 +11,11 @@ import { StarElement, StarryBackground } from "../shared/StarryBackground";
 
 export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext }, ref) => {
   const [points, setPoints] = useState([false, false, false, false, false]); 
+  const [sensorEnabled, setSensorEnabled] = useState(false);
+  const [needsPermission, setNeedsPermission] = useState(false);
+  const [tiltProgress, setTiltProgress] = useState(0);
+  const [secretVisible, setSecretVisible] = useState(false);
+  const [tilt, setTilt] = useState({ beta: 0, gamma: 0 });
   const { trigger: haptic } = useHaptic();
 
   const stars = useMemo(() => [...Array(100)].map(() => ({
@@ -73,6 +78,59 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
     { top: 30, left: 80 }
   ];
 
+  const secretCoords = [
+    { top: 18, left: 18 },
+    { top: 20, left: 52 },
+    { top: 28, left: 72 },
+    { top: 48, left: 62 },
+    { top: 62, left: 32 },
+    { top: 44, left: 22 }
+  ];
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const needs = typeof (window.DeviceOrientationEvent as any)?.requestPermission === "function";
+    setNeedsPermission(needs);
+    if (!needs) setSensorEnabled(true);
+  }, []);
+
+  useEffect(() => {
+    if (!sensorEnabled) return;
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      const beta = event.beta ?? 0;
+      const gamma = event.gamma ?? 0;
+      setTilt({ beta, gamma });
+
+      const threshold = 35;
+      const maxRange = 25;
+      const intensity = Math.max(Math.abs(beta) - threshold, Math.abs(gamma) - threshold);
+      const progress = Math.min(Math.max(intensity / maxRange, 0), 1);
+      setTiltProgress(progress);
+      setSecretVisible(progress > 0.6);
+    };
+
+    window.addEventListener("deviceorientation", handleOrientation, true);
+    return () => window.removeEventListener("deviceorientation", handleOrientation, true);
+  }, [sensorEnabled]);
+
+  const handleEnableSensors = async () => {
+    if (typeof window === "undefined") return;
+    const permissionFn = (window.DeviceOrientationEvent as any)?.requestPermission;
+    if (typeof permissionFn === "function") {
+      try {
+        const result = await permissionFn();
+        if (result === "granted") {
+          setSensorEnabled(true);
+          haptic("light");
+        }
+      } catch {
+        setSensorEnabled(false);
+      }
+      return;
+    }
+    setSensorEnabled(true);
+  };
+
   return (
     <motion.div
       ref={ref}
@@ -80,7 +138,12 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
       variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}
     >
       <StarryBackground density={300} className="-z-10" />
-      <div className="absolute inset-0">
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: `translate3d(${tilt.gamma * 0.15}px, ${tilt.beta * 0.15}px, 0)`
+        }}
+      >
         {stars.map((star, i) => (
           <StarElement key={i} top={star.top} left={star.left} delay={star.delay} size={star.size} />
         ))}
@@ -91,6 +154,19 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
       <div className="z-10 text-center mb-12 relative">
         <h2 className="text-4xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-indigo-200 mb-2 drop-shadow-lg">Constelação</h2>
         <p className="text-gray-400 text-sm">Mesmo longe, olhamos para o mesmo céu.</p>
+        {needsPermission && !sensorEnabled && (
+          <button
+            onClick={handleEnableSensors}
+            className="mt-4 px-4 py-2 text-[10px] uppercase tracking-widest rounded-full border border-white/20 bg-white/10 hover:bg-white/20 transition-all"
+          >
+            Ativar giroscópio
+          </button>
+        )}
+        {sensorEnabled && (
+          <p className="mt-3 text-[10px] uppercase tracking-widest text-white/50">
+            Incline o celular para ver o segredo
+          </p>
+        )}
       </div>
 
       <div className="relative w-full h-72 mx-auto max-w-sm">
@@ -144,6 +220,58 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
             <Heart size={120} className="text-pink-500 fill-pink-500 drop-shadow-[0_0_50px_rgba(236,72,153,0.8)]" />
           </motion.div>
         )}
+
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              opacity: tiltProgress,
+              scale: 0.98 + tiltProgress * 0.02,
+              filter: `blur(${Math.max(0, 6 - tiltProgress * 6)}px)`
+            }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            <svg
+              className="absolute inset-0 w-full h-full overflow-visible drop-shadow-[0_0_12px_rgba(147,197,253,0.8)]"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              {secretCoords.map((pos, i) => (
+                <circle key={`s-${i}`} cx={pos.left} cy={pos.top} r="1.6" fill="white" opacity="0.9" />
+              ))}
+              {secretCoords.map((pos, i) => {
+                const next = secretCoords[i + 1];
+                if (!next) return null;
+                return (
+                  <line
+                    key={`l-${i}`}
+                    x1={pos.left}
+                    y1={pos.top}
+                    x2={next.left}
+                    y2={next.top}
+                    stroke="rgba(191,219,254,0.8)"
+                    strokeWidth="1.2"
+                    strokeDasharray="2 4"
+                  />
+                );
+              })}
+            </svg>
+          </motion.div>
+
+          <motion.div
+            className="absolute bottom-4 right-2 text-right text-xs font-serif text-blue-100/90"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{
+              opacity: secretVisible ? 1 : 0,
+              y: secretVisible ? 0 : 10
+            }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            Existem coisas que só vemos
+            <br />
+            quando mudamos a perspectiva.
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );
