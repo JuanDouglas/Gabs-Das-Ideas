@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
@@ -51,22 +51,19 @@ export const BackgroundMusic = () => {
     
     const handleCanPlayThrough = () => {
       setLoaded(true);
-      console.log("M??sica carregada com sucesso");
     };
     
     const handleLoadedMetadata = () => {
       setLoaded(true);
-      console.log("Metadados da m??sica carregados");
     };
     
     const handleError = (e: Event) => {
       setError(true);
-      console.warn("Falha ao carregar m??sica de fundo:", e);
+      console.warn("Falha ao carregar música de fundo:", e);
     };
 
     const handleLoadedData = () => {
       setLoaded(true);
-      console.log("Dados da m??sica carregados");
     };
     
     audio.addEventListener("canplaythrough", handleCanPlayThrough);
@@ -145,3 +142,5 @@ export const BackgroundMusic = () => {
     </button>
   );
 };
+
+

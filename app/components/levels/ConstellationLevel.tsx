@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -153,7 +153,7 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
 
       <div className="z-10 text-center mb-12 relative">
         <h2 className="text-4xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-indigo-200 mb-2 drop-shadow-lg">Constelação</h2>
-        <p className="text-gray-400 text-sm">Mesmo longe, olhamos para o mesmo céu.</p>
+        <p className="text-gray-400 text-sm">Mesmo longe, o céu é o mesmo.</p>
         {needsPermission && !sensorEnabled && (
           <button
             onClick={handleEnableSensors}
@@ -164,7 +164,7 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
         )}
         {sensorEnabled && (
           <p className="mt-3 text-[10px] uppercase tracking-widest text-white/50">
-            Incline o celular para ver o segredo
+            Incline o celular para revelar o segredo
           </p>
         )}
       </div>
@@ -278,3 +278,5 @@ export const ConstellationLevel = React.forwardRef<HTMLDivElement, LevelProps>((
 });
 
 ConstellationLevel.displayName = "ConstellationLevel";
+
+

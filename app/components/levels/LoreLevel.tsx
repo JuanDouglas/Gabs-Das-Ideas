@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -144,9 +144,9 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
 
                 <div className="mt-6 space-y-4">
                   {[
-                    { label: "Analisando fragmentos", tone: "from-pink-300/70 to-transparent", delay: 0 },
-                    { label: "Sincronizando memória", tone: "from-white/60 to-transparent", delay: 0.2 },
-                    { label: "Decodificando camada", tone: "from-indigo-300/70 to-transparent", delay: 0.4 },
+                    { label: "Organizando lembranças", tone: "from-pink-300/70 to-transparent", delay: 0 },
+                    { label: "Sincronizando memórias", tone: "from-white/60 to-transparent", delay: 0.2 },
+                    { label: "Decifrando detalhes", tone: "from-indigo-300/70 to-transparent", delay: 0.4 },
                   ].map((step, index) => (
                     <motion.div
                       key={step.label}
@@ -177,7 +177,7 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
                 <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-widest text-white/60">
                     <Fingerprint size={14} className="text-pink-200" />
-                    <span>Sincronizando assinatura</span>
+                    <span>Confirmando assinatura</span>
                   </div>
                   <div className="mt-3 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
                     <motion.div
@@ -189,7 +189,7 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
                 </div>
 
                 <div className="mt-4 flex items-center justify-between text-[10px] font-mono text-white/50 uppercase tracking-widest">
-                  <span>Descriptografia em curso</span>
+                  <span>Desbloqueio em andamento</span>
                   <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.7, repeat: Infinity }}>
                     Acesso IV
                   </motion.span>
@@ -227,7 +227,7 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
                 </div>
                 <div className="flex flex-col">
                     <span className="text-[10px] uppercase tracking-widest text-white/60">Registro {loreData.date}</span>
-                    <span className="text-xs font-mono text-white/80">NÍVEL DE ACESSO: IV</span>
+                    <span className="text-xs font-mono text-white/80">ACESSO: IV</span>
                 </div>
                 <div className="ml-auto">
                    <Unlock size={14} className="text-emerald-300/80" />
@@ -350,7 +350,7 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
                 className="absolute bottom-8 left-8 flex flex-col gap-1" 
             >
                 <span className="text-[8px] font-mono text-white/60">ARQUIVO: {loreData.chapter}</span>
-                <span className="text-[8px] font-mono text-white/60">STATUS: DECODIFICADO</span>
+                <span className="text-[8px] font-mono text-white/60">STATUS: OK</span>
                 <span className="text-[8px] font-mono text-white/60">INTEGRIDADE: 100%</span>
             </motion.div>
         </div>
@@ -361,3 +361,5 @@ export const LoreLevel = React.forwardRef<HTMLDivElement, LoreProps>(({ onNext, 
 });
 
 LoreLevel.displayName = "LoreLevel";
+
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -70,8 +70,8 @@ export const FeedLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext 
     >
       <StarryBackground density={60} className="-z-10 opacity-20" />
       <div className="text-center mb-8">
-        <h2 className="text-4xl font-black uppercase mb-2">Hora do Lanche!</h2>
-        <p className="text-yellow-800 font-bold opacity-70">A Gaby está com fome! Clique rápido!</p>
+        <h2 className="text-4xl font-black uppercase mb-2">Hora do lanche!</h2>
+        <p className="text-yellow-800 font-bold opacity-70">A Gaby está com fome! Clica rápido!</p>
       </div>
 
       <div className="relative w-72 h-12 bg-black/20 rounded-full overflow-hidden border-3 border-black/30 mb-12 shadow-inner">
@@ -166,3 +166,4 @@ export const FeedLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNext 
 });
 
 FeedLevel.displayName = "FeedLevel";
+

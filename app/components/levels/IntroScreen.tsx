@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -311,7 +311,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
         <>
           <div className="absolute top-10 text-center pointer-events-none z-20 w-full px-4">
             <h2 className="text-pink-400 font-bold tracking-widest text-xs uppercase animate-pulse mb-2">
-              Evite as Bombas!
+              Desvie das bombas!
             </h2>
             <div className="flex justify-center items-center gap-4">
                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-lg text-white/80">
@@ -368,7 +368,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                   
                   {/* Tooltip */}
                   <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Trocar skin
+                    Trocar veículo
                   </div>
                 </motion.button>
               </motion.div>
@@ -376,7 +376,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
           </AnimatePresence>
           
           <div className="absolute bottom-10 w-full text-center space-y-2 pointer-events-none">
-             <div className="text-white/30 text-xs uppercase tracking-widest">Arraste para pilotar</div>
+             <div className="text-white/30 text-xs uppercase tracking-widest">Arraste para voar</div>
              <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 0.8 }}
@@ -384,7 +384,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                className="text-[10px] text-green-300/80 font-mono tracking-wider flex items-center justify-center gap-2 mt-4"
              >
                <Eye size={12} />
-               <span>Nada é por acaso... observe os detalhes.</span>
+               <span>Nada é por acaso... olha com carinho.</span>
              </motion.div>
           </div>
 
@@ -406,10 +406,10 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                   <div className="w-16 h-16 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                     <Gamepad2 size={32} className="text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Protocolo Gabrielly</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">Protocolo Gaby</h2>
                   <p className="text-gray-300 text-sm mb-6 leading-relaxed">
                     Bem-vinda, amor! <br/>
-                    Esta é uma jornada interativa pelas nossas memórias. Colete corações, desvie dos obstáculos e preste atenção aos <strong>segredos escondidos</strong>.
+                    Essa é uma jornada pelas nossas memórias. Colete corações, desvie dos obstáculos e preste atenção nos <strong>segredos escondidos</strong>.
                   </p>
                   <motion.button 
                     onClick={() => {
@@ -431,7 +431,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                     />
                     <span className="relative z-10 flex items-center justify-center gap-2">
                       <Rocket size={20} className="group-hover:rotate-12 transition-transform" />
-                      Iniciar Missão
+                      Começar missão
                     </span>
                   </motion.button>
                 </motion.div>
@@ -473,16 +473,16 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                     transition={{ duration: 2, repeat: Infinity }}
                     className="relative z-10 text-2xl font-semibold text-yellow-200 mb-1 tracking-wide"
                   >
-                    Achievement Unlocked
+                    Conquista desbloqueada
                   </motion.h2>
                   
                   <h3 className="relative z-10 text-lg font-semibold text-white/90 mb-4">
-                    🎯 Boundary Breaker
+                    🎯 Quebra de limites
                   </h3>
                   
                   <p className="relative z-10 text-white/70 text-sm mb-6 leading-relaxed">
-                    Você descobriu como quebrar as barreiras da realidade.<br/>
-                    <span className="text-yellow-200 font-semibold">Recompensa:</span> Avião desbloqueado ✈️<br/>
+                    Você achou um caminho além das bordas.<br/>
+                    <span className="text-yellow-200 font-semibold">Recompensa:</span> Avião desbloqueado âœˆï¸<br/>
                     <span className="text-white/50 text-xs">Use o botão no canto para alternar entre foguete e avião.</span>
                   </p>
                   
@@ -493,7 +493,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
                     className="relative z-10 w-full py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2 border border-white/15 backdrop-blur-md"
                   >
                     <span className="text-xl">✈️</span>
-                    Continuar Pilotando
+                    Seguir voando
                   </motion.button>
                 </motion.div>
               </motion.div>
@@ -506,8 +506,8 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
             <Gamepad2 size={48} className="text-pink-400 fill-pink-400/20" />
           </motion.div>
           <div className="space-y-2">
-            <h2 className="text-green-400 font-bold tracking-widest text-xs uppercase">Level Unlocked</h2>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">Gabrielly's <br/> Adventure</h1>
+            <h2 className="text-green-400 font-bold tracking-widest text-xs uppercase">Nível liberado</h2>
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">Aventura <br/> da Gabrielly</h1>
           </div>
           <motion.button 
             whileHover={{ 
@@ -530,7 +530,7 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
             className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-full text-xs font-semibold tracking-wide transition-all border border-white/10 backdrop-blur-md"
             aria-label="Jogar novamente o primeiro jogo"
           >
-            Jogar novamente.
+            Jogar de novo.
           </button>
         </motion.div>
       )}
@@ -539,3 +539,8 @@ export const IntroScreen = React.forwardRef<HTMLDivElement, IntroScreenProps>(({
 });
 
 IntroScreen.displayName = "IntroScreen";
+
+
+
+
+

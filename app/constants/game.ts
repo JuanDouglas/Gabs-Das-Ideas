@@ -1,4 +1,4 @@
-export const MEMORIES = {
+﻿export const MEMORIES = {
   campus: {
     url: "./images/cpgo.jpg",
     date: "21 NOV 2025",
@@ -20,13 +20,13 @@ export const MEMORIES = {
       id: 2, 
       url: "./images/surpresa.jpg", 
       date: "17 JAN 2025", 
-      title: "Aquela Viagem" 
+      title: "Nossa viagem surpresa" 
     },
     { 
       id: 3, 
       url: "./images/ela_aqui.jpeg", 
       date: "25 JAN 2025", 
-      title: "É incrível como sua presença é boa!" 
+      title: "Como é bom ter você por perto" 
     },
     { 
       id: 4, 
@@ -38,7 +38,7 @@ export const MEMORIES = {
       id: 5,
       url: "./images/proximos.png",
       date: "FUTURO",
-      title: "Próximas Fases"
+      title: "O que vem aí"
     }
   ]
 };
@@ -46,35 +46,35 @@ export const MEMORIES = {
 export const LORE_DATA = {
   intro: {
     chapter: "Capítulo 01",
-    title: "O Começo de Tudo",
+    title: "O começo de tudo",
     image: "./images/cpgo.jpg",
     date: "21 NOV 2025",
-    text: "Foi o dia em que o player 1 encontrou o player 2. Em meio a tanta tecnologia, o melhor algoritmo foi o destino juntando a gente."
+    text: "Foi o dia em que o player 1 encontrou o player 2. No meio de tanta tecnologia, o melhor algoritmo foi o destino colocando a gente no mesmo caminho."
   },
   celebration: {
     chapter: "Capítulo 02", 
-    title: "Momentos de Alegria",
+    title: "Momentos de alegria",
     image: "./images/ano_novo.jpeg",
     date: "31 DEZ 2023",
-    text: "Toda celebração fica maior quando é com quem a gente ama. Risos que continuam ecoando no tempo."
+    text: "Toda celebração fica maior quando é com quem a gente ama. Riso que continua ecoando no tempo."
   },
   distance: {
     chapter: "Capítulo 03",
-    title: "Superando Obstáculos", 
+    title: "Superando obstáculos", 
     image: "./images/surpresa.jpg",
     date: "17 JAN 2025",
     text: "A distância vira só número quando dois corações estão conectados. Cada quilômetro percorrido valeu a pena."
   },
   stars: {
     chapter: "Capítulo 04",
-    title: "Sob as Estrelas",
+    title: "Sob as estrelas",
     image: "./images/ela_aqui.jpeg", 
     date: "25 JAN 2025",
-    text: "Mesmo longe, a gente olha para o mesmo céu. As estrelas guardam silêncio, mas testemunham o nosso amor."
+    text: "Mesmo longe, a gente olha para o mesmo céu. As estrelas ficam em silêncio, mas testemunham o nosso amor."
   },
   care: {
     chapter: "Capítulo 05",
-    title: "Cuidado e Carinho",
+    title: "Cuidado e carinho",
     image: "./images/aleatoria.jpg",
     date: "HOJE", 
     text: "Cuidar um do outro é a forma mais pura de amor. Cada gesto pequeno constrói algo grande."
@@ -101,3 +101,4 @@ export const STEPS = {
 };
 
 export const POINTS_TO_WIN = 30;
+

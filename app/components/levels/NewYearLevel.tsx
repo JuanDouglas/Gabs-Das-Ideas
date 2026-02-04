@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -129,7 +129,7 @@ export const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNe
                 backgroundSize: "200% 200%"
               }}
             >
-              CELEBRE!
+              COMEMORE!
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
                 animate={{ x: ["-100%", "100%"] }}
@@ -142,7 +142,7 @@ export const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNe
               animate={{ opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              Toque para estourar os fogos
+              Toque para soltar os fogos
             </motion.p>
             <PartyPopper className="mx-auto mt-8 text-yellow-400 w-12 h-12 animate-bounce" />
           </motion.div>
@@ -174,7 +174,7 @@ export const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNe
               transition={{ delay: 0.3 }}
             >
               <h2 className="text-4xl font-bold text-white mb-2">Perfeito!</h2>
-              <p className="text-yellow-300 font-medium text-lg">Celebração completa! 🎆</p>
+              <p className="text-yellow-300 font-medium text-lg">Festa completa! 🎆</p>
             </motion.div>
             
             <motion.div
@@ -184,7 +184,7 @@ export const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNe
               transition={{ delay: 0.6 }}
             >
               <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-              <span>Preparando próxima aventura...</span>
+              <span>Preparando a próxima aventura...</span>
             </motion.div>
           </motion.div>
         )}
@@ -194,3 +194,4 @@ export const NewYearLevel = React.forwardRef<HTMLDivElement, LevelProps>(({ onNe
 });
 
 NewYearLevel.displayName = "NewYearLevel";
+

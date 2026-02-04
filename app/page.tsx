@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -26,11 +26,11 @@ export default function App() {
   // Easter Egg no console
   useEffect(() => {
     console.log(
-      "%c Warning: High levels of dopamine detected! ",
+      "%c Aviso: níveis altos de dopamina detectados! ",
       "background: #222; color: #bada55; font-size: 20px; padding: 10px;"
     );
     console.log(
-      "%c Se você está lendo isso, saiba que te amo em todos os ambientes, de dev a prod. ",
+      "%c Se você está lendo isso, saiba que eu te amo em todos os ambientes, do dev ao prod. ",
       "color: #ec4899; font-style: italic;"
     );
     // ASCII Art opcional
@@ -84,8 +84,8 @@ export default function App() {
         return currentStep;
       };
       
-      console.log("🔧 Console de desenvolvedor ativado!");
-      console.log("Digite listLevels() para ver todos os comandos disponíveis");
+      console.log("🔧 Console do dev ativado!");
+      console.log("Digite listLevels() para ver os comandos disponíveis");
     }
   }, [isMounted, step]);
   
@@ -99,10 +99,10 @@ export default function App() {
         nextStepValue = STEPS.FINAL;
       }
       if (nextStepValue > STEPS.FINAL) {
-        console.log("Tentativa de ir além da tela final, permanecendo em:", STEPS.FINAL);
+        console.log("Tentativa de passar da tela final, ficando em:", STEPS.FINAL);
         return STEPS.FINAL;
       }
-      console.log("Avançando para step:", nextStepValue);
+      console.log("Indo para a etapa:", nextStepValue);
       return nextStepValue;
     });
     
@@ -121,7 +121,7 @@ export default function App() {
     if (isTransitioning) return;
     
     setIsTransitioning(true);
-    console.log("Reiniciando jogo");
+    console.log("Reiniciando o jogo");
     setStep(STEPS.INTRO);
     
     setTimeout(() => setIsTransitioning(false), 800);
@@ -130,7 +130,7 @@ export default function App() {
   if (!isMounted) {
     return (
       <div className="relative w-full h-screen bg-[#0f0c29] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-white">Carregando...</div>
       </div>
     );
   }
@@ -159,7 +159,7 @@ export default function App() {
           <FinalLevel 
             key="final" 
             onRestart={() => {
-              console.log("Reiniciando do FinalLevel");
+              console.log("Reiniciando a partir do FinalLevel");
               restart();
             }} 
           />
@@ -168,7 +168,7 @@ export default function App() {
           <FinalLevel 
             key="final" 
             onRestart={() => {
-              console.log("Reiniciando do FinalLevel");
+              console.log("Reiniciando a partir do FinalLevel");
               restart();
             }} 
           />
@@ -281,3 +281,4 @@ export default function App() {
     </SoundContext.Provider>
   );
 }
+

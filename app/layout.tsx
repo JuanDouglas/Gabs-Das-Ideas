@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Heart in Space",
-  description: "Um jogo diferenciado no espaço amoroso.",
+  title: "Nosso Universo",
+  description: "Uma jornada interativa pelas nossas memórias.",
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
