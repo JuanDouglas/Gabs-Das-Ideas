@@ -45,7 +45,7 @@ export const BackgroundMusic = () => {
     const audio = new Audio();
     audio.src = MUSIC_URL;
     audio.loop = true;
-    audio.volume = 0.2;
+    audio.volume = 0.05;
     audio.preload = "metadata";
     audio.crossOrigin = "anonymous";
     

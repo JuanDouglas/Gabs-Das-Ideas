@@ -83,7 +83,7 @@ export const LORE_DATA = {
 
 export type LoreKey = keyof typeof LORE_DATA;
 
-export const MUSIC_URL = "./sounds/background.mp3";
+export const MUSIC_URL = "./sounds/synthwave.mp3";
 
 export const STEPS = {
   INTRO: 0,
